@@ -1,10 +1,12 @@
 import { Box, Flex, IconButton, Image, Link as ChakraLink } from '@chakra-ui/react'
-import React from 'react'
+import React, { useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { discordLogo } from '../assets'
 import { ImMenu } from 'react-icons/im'
 
 const Home = () => {
+  const [ accessToken, setAccessToken ] = useState(false);
+  
   return (
     <>
       <Box h='100%' w='100%' overflowX='hidden'>
@@ -20,7 +22,7 @@ const Home = () => {
             as={'header'}
             h='80px' 
             w='100%'
-            p='0 24px'
+            p={{base: '0 24px', md: '0 40px'}}
             zIndex='9999'
           >
             <Flex
@@ -31,12 +33,9 @@ const Home = () => {
               w='100%'
             >
               <ChakraLink as={RouterLink} to='/'>
-                <Image 
-                  src={discordLogo}
-                  h='34px'
-                  w='124px'
-                />
+                <Image src={discordLogo} h='34px' w='124px' />
               </ChakraLink>
+
               <ChakraLink
                 as={RouterLink}
                 to='/login'
@@ -54,7 +53,7 @@ const Home = () => {
                   boxShadow: 'rgba(0, 0, 0, 0.19) 0px 10px 20px, rgba(0, 0, 0, 0.23) 0px 6px 6px',
                 }}
               >
-                Open Discord
+                {accessToken ? 'Open Discord' : 'Login'}
               </ChakraLink>
             </Flex>
           </Flex>

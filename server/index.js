@@ -3,6 +3,7 @@ const app = express();
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
+const cors = require('cors');
 const authRoute = require('./routes/auth');
 const tokenRoute = require('./routes/token');
 
@@ -10,6 +11,10 @@ dotenv.config();
 
 app.use(express.json());
 app.use(cookieParser());
+app.use(cors({
+    credentials: true, 
+    origin: 'http://localhost:5173',
+}));
 app.use('/auth', authRoute);
 app.use('/token', tokenRoute);
 

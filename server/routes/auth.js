@@ -21,6 +21,11 @@ const generateRefreshToken = (user) => {
     );
 };
 
+router.post('/token', async (req, res) => {
+    const token = req.cookies.access_token;
+    aff
+})
+
 router.post('/register', async (req, res) => {
     const { email, password } = req.body;
 
@@ -66,7 +71,7 @@ router.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json(`${email}　このようなユーザーは存在しません`);
+            return res.status(401).json('ユーザーが存在しません');
         }
 
         const validatePassword = await bcrypt.compare(password, user.password);
@@ -98,7 +103,7 @@ router.post('/login', async (req, res) => {
                 httpOnly: true, 
             });
 
-            return res.status(200).json(user);
+            return res.status(200).json({user, accessToken});
         }
         
     } catch (err) {

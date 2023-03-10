@@ -6,9 +6,13 @@ import { AiFillMessage, AiOutlinePlus } from 'react-icons/ai'
 import { IoMdCompass } from 'react-icons/io'
 import { Outlet } from 'react-router-dom'
 import { CreateServer, NavIcon } from '../components'
+import { useSelector } from 'react-redux'
 
 const User = () => {
   const [isModal, setIsModal] = useState('');
+  const currentUser = useSelector((state) => state.auth.currentUser);
+
+  console.log(currentUser)
   
   return (
     <>

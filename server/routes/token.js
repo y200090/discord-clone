@@ -27,7 +27,7 @@ router.post('/refresh', async (req, res) => {
     try {
         const token = await RefreshToken.findOne({ refreshToken });
         if (!token) {
-            return res.status(401).json('有効でないトークンです');
+            return res.status(403).json('有効でないトークンです');
         }
 
         jwt.verify(
@@ -51,7 +51,9 @@ router.post('/refresh', async (req, res) => {
                     httpOnly: true, 
                 });
 
-                return res.sendStatus(200);
+                return res.status(200).json({
+                    newAccessToken
+                });
             }
         );
         
