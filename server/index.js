@@ -5,7 +5,9 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 const authRoute = require('./routes/auth');
-const tokenRoute = require('./routes/token');
+const userRoute = require('./routes/user');
+const serverRoute = require('./routes/server');
+const channelRoute = require('./routes/channel');
 
 dotenv.config();
 
@@ -16,7 +18,9 @@ app.use(cors({
     origin: 'http://localhost:5173',
 }));
 app.use('/auth', authRoute);
-app.use('/token', tokenRoute);
+app.use('/user', userRoute);
+app.use('/server', serverRoute);
+app.use('/channel', channelRoute);
 
 mongoose.connect(process.env.MONGODB_URL).then(() => {
     console.log('Connected to MongoDB!');

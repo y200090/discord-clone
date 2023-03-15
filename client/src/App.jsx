@@ -1,20 +1,10 @@
 import React from 'react'
-import { useSelector } from 'react-redux'
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { Chat, Main, Search, Server } from './components'
 import { Home, Login, Register, User } from './pages'
+import ProtectedRoute from './utils/ProtectedRoute'
 
 const App = () => {
-  const accessToken = useSelector((state) => state.auth.accessToken);
-  const location = useLocation();
-  
-  const ProtectedRoute = () => {
-    if (!accessToken) {
-      return <Navigate to='/login' state={{ from: location }} replace />
-    }
-    return <Outlet />
-  }
-  
   return (
     <Routes>
       <Route path='/' element={<Home />} />

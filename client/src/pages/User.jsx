@@ -2,18 +2,18 @@ import { AvatarGroup, Box, Flex, VStack } from '@chakra-ui/react'
 import { css } from '@emotion/react'
 import React, { useState } from 'react'
 import { FaDiscord } from 'react-icons/fa'
-import { AiFillMessage, AiOutlinePlus } from 'react-icons/ai'
+import { AiOutlinePlus } from 'react-icons/ai'
 import { IoMdCompass } from 'react-icons/io'
 import { Outlet } from 'react-router-dom'
 import { CreateServer, NavIcon } from '../components'
 import { useSelector } from 'react-redux'
+import { selectCurrentUser } from '../redux/auth/selectors'
 
 const User = () => {
   const [isModal, setIsModal] = useState('');
-  const currentUser = useSelector((state) => state.auth.currentUser);
-
-  console.log(currentUser)
-  
+  // const currentUser = useSelector(selectCurrentUser);
+  // console.log(currentUser)
+    
   return (
     <>
       <Flex h='100vh' w='100vw'>

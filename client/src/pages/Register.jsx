@@ -4,10 +4,13 @@ import React, { useState } from 'react'
 import { useForm } from 'react-hook-form';
 import { BsQuestionCircle } from 'react-icons/bs';
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md';
-import { Link as RouterLink } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { discordLogo } from '../assets';
 import { strongPassword, mediumPassword } from '../assets/regexp';
 import MotionForm from '../components/layouts/MotionForm';
+import { useSignUpMutation } from '../redux/apis/authApi';
+import { setCredential } from '../redux/auth/slices';
 
 const Register = () => {
   const [isRevealPassword, setIsRevealPassword] = useState(false);
@@ -16,7 +19,9 @@ const Register = () => {
     strength: '', 
     message: '',
   });
-  
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [signUp, {isLoading}] = useSignUpMutation();
   const {
     register,
     handleSubmit, 
@@ -26,19 +31,21 @@ const Register = () => {
       errors, 
       isSubmitting,
     }
-  } = useForm();
-
+  } = useForm({
+    shouldFocusError: true,
+  });
   const watchChecked = watch('checked', false);
 
   const onSubmit = async (data) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        console.log(data);
-        reset();
-        setPassword({...password, value: ''});
-        resolve();
-      }, 3000);
-    })
+    try {
+      const currentUser = await signUp({...data}).unwrap();
+      dispatch(setCredential({...currentUser}));
+      reset();
+      navigate('/channels/@me');
+      
+    } catch (err) {
+      console.log(err?.data);
+    }
   };
 
   const emailValidator = {

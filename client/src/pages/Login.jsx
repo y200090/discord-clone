@@ -7,17 +7,14 @@ import { MdVisibility, MdVisibilityOff } from 'react-icons/md'
 import MotionForm from '../components/layouts/MotionForm'
 import { discordLogo } from '../assets'
 import { useDispatch } from 'react-redux'
-import { useLoginMutation } from '../redux/apis/authApi'
-import { setCredentials } from '../redux/auth/slices'
-// import axios from '../utils/axios'
-
-// const LOGIN_URL = '/auth/login';
+import { useLogInMutation } from '../redux/apis/authApi'
+import { setCredential } from '../redux/auth/slices'
 
 const Login = () => {
   const [isRevealPassword, setIsRevealPassword] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [login, {isLoading}] = useLoginMutation();
+  const [logIn, {isLoading}] = useLogInMutation();
   const {
     register, 
     handleSubmit, 
@@ -26,24 +23,14 @@ const Login = () => {
       errors, 
       isSubmitting,
     }
-  } = useForm();
+  } = useForm({
+    shouldFocusError: true,
+  });
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = await login({...data}).unwrap();
-      dispatch(setCredentials({...currentUser}));      
-      // const response = await axios.post(LOGIN_URL, 
-      //   JSON.stringify({
-      //     email: data.email, 
-      //     password: data.password,
-      //   }
-      // ), 
-      // {
-      //   headers: {'Content-Type': 'application/json'},
-      //   withCredentials: true,
-      // });
-
-      // console.log(response);
+      const currentUser = await logIn({...data}).unwrap();
+      dispatch(setCredential({...currentUser}));
       reset();
       navigate('/channels/@me');
       
@@ -102,6 +89,7 @@ const Login = () => {
                 fontWeight='700'
                 display='flex'
                 alignItems='center'
+                htmlFor='email'
               >
                 {errors.email 
                   ? <Text color='#fa777b'>メールアドレス</Text>
@@ -145,6 +133,7 @@ const Login = () => {
                 fontWeight='700'
                 display='flex'
                 alignItems='center'
+                htmlFor='password'
               >
                 {errors.password 
                   ? <Text color='#fa777b'>パスワード</Text>
@@ -178,7 +167,7 @@ const Login = () => {
                   errorBorderColor='transparent'
                   borderRadius='4px'
                   {...register('password', PasswordValidator)}
-                  />
+                />
 
                 <InputRightElement>
                   <IconButton 

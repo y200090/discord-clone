@@ -9,7 +9,7 @@ const generateAccessToken = (user) => {
     return jwt.sign(
         { userId: user.id }, 
         process.env.ACCESS_TOKEN_SECRET_KEY, 
-        { expiresIn: '30s' },
+        { expiresIn: '1m' },
     );
 };
 
@@ -17,20 +17,15 @@ const generateRefreshToken = (user) => {
     return jwt.sign(
         { userId: user.id }, 
         process.env.REFRESH_TOKEN_SECRET_KEY, 
-        { expiresIn: '60s' },
+        { expiresIn: '1d' },
     );
 };
 
-router.post('/token', async (req, res) => {
-    const token = req.cookies.access_token;
-    aff
-})
-
-router.post('/register', async (req, res) => {
+router.post('/signup', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const usedEmail = await User.findOne({ email });
+        const usedEmail = await User.findOne({ email }).exec();
         if (usedEmail) {
             return res.status(400).json('このメールアドレスは既に使われています');
         }
@@ -65,11 +60,15 @@ router.post('/register', async (req, res) => {
     }
 });
 
+router.post('/setupprofile', async (req, res) => {
+
+});
+
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email }).exec();
         if (!user) {
             return res.status(401).json('ユーザーが存在しません');
         }
@@ -83,7 +82,7 @@ router.post('/login', async (req, res) => {
             const accessToken = generateAccessToken(user);
             const refreshToken = generateRefreshToken(user);
 
-            const token = await RefreshToken.findOne({ userId: user.id });
+            const token = await RefreshToken.findOne({ userId: user.id }).exec();
             if (!token) {
                 await RefreshToken.create({
                     userId: user.id, 
@@ -103,7 +102,7 @@ router.post('/login', async (req, res) => {
                 httpOnly: true, 
             });
 
-            return res.status(200).json({user, accessToken});
+            return res.status(200).json(user);
         }
         
     } catch (err) {
@@ -114,7 +113,7 @@ router.post('/login', async (req, res) => {
 router.post('/logout', verify, async (req, res) => {
     const refreshToken = req.cookies.refresh_token;
     try {
-        const token = await RefreshToken.findOne({ refreshToken });
+        const token = await RefreshToken.findOne({ refreshToken }).exec();
         if (token) {
             await token.remove();
         }
@@ -123,7 +122,50 @@ router.post('/logout', verify, async (req, res) => {
         res.clearCookie('refresh_token');
         
     } catch (err) {
-        return res.status(200).json(err);
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/refreshtoken', async (req, res) => {
+    const refreshToken = req.cookies.refresh_token;
+    if (!refreshToken) {
+        return res.status(401).json('更新トークンがありません');
+    }
+    console.log(refreshToken)
+
+    try {
+        const token = await RefreshToken.findOne({ refreshToken }).exec();
+        if (!token) {
+            return res.status(403).json('トークンが見つかりません');
+        }
+
+        jwt.verify(
+            refreshToken, 
+            process.env.REFRESH_TOKEN_SECRET_KEY, 
+            async (err, decoded) => {
+                if (err) {
+                    return res.status(403).json('有効でないトークンです');
+                }
+
+                const newAccessToken = generateAccessToken(decoded);
+                const newRefreshToken = generateRefreshToken(decoded);
+
+                token.refreshToken = newRefreshToken;
+                await token.save();
+
+                res.cookie('access_token', newAccessToken, {
+                    httpOnly: true, 
+                });
+                res.cookie('refresh_token', newRefreshToken, {
+                    httpOnly: true, 
+                });
+
+                return res.status(200).json({'res': 'トークンを更新しました'});
+            }
+        );
+        
+    } catch (err) {
+        return res.status(500).json(err);
     }
 });
 

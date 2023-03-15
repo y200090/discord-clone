@@ -1,11 +1,11 @@
 import { Box, Container, Flex, Image, Link as ChakraLink } from '@chakra-ui/react'
-import styled from '@emotion/styled'
+import { css } from '@emotion/react';
 import React from 'react'
 import { Link as RouterLink } from 'react-router-dom';
 import { discordLogo } from '../../assets';
 
 const MotionForm = ({ children }) => {
-  const ResponsiveForm = styled.div`
+  const ResponsiveForm = css`
     width: 100%;
     background-color: #313338;
     @media (min-width: 481px) {
@@ -39,9 +39,9 @@ const MotionForm = ({ children }) => {
       <Box bg='#5865f2'>
         <Container h='100vh' w='100%' maxW='480px' p='0'>
           <Flex h='100%' w='100%' align='center' justify='center'>
-            <ResponsiveForm>
+            <div css={ResponsiveForm}>
               { children }
-            </ResponsiveForm>
+            </div>
           </Flex>
         </Container>
       </Box>
