@@ -1,5 +1,5 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import { setCredential, logOut } from '../auth/slices';
+import { setCredential, logout } from './authSlice';
 
 const baseQuery = fetchBaseQuery({ 
     baseUrl: 'http://localhost:8000', 
@@ -16,21 +16,20 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
             method: 'POST', 
             url: '/auth/refreshtoken',
         }, api, extraOptions);
-        console.log('refreshtoken')
         console.log(refreshResult);
 
         if (refreshResult?.data) {
-            const currentUser = api.getState().auth.currentUser;
-            api.dispatch(setCredential({...refreshResult.data, currentUser}));
+            // api.dispatch(setCredential({...refreshResult.data}));
             result = await baseQuery(args, api, extraOptions);
 
         } else {
-            api.dispatch(logOut());
-            await baseQuery({
-                method: 'POST', 
-                url: '/auth/logout',
-            }, api, extraOptions);
-            console.log('ログアウトしました')
+            // await baseQuery({
+            //     method: 'POST', 
+            //     url: '/auth/logout',
+            // }, api, extraOptions);
+            api.dispatch(logout());
+            console.log('ログアウトしました');
+            console.log(result)
         }
     }
 
@@ -40,5 +39,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
     reducerPath: 'apiSlice',
     baseQuery: baseQueryWithReauth,
+    tagTypes: ['User', 'Server', 'Channel', 'Friend', 'Auth'],
     endpoints: () => ({}),
 });

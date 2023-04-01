@@ -1,9 +1,13 @@
 const mongoose = require('mongoose');
 
 const ServerSchema = new mongoose.Schema({
-    serverName: {
+    title: {
         type: String, 
         required: true,
+    },
+    photoURL: {
+        type: String,
+        default: '',
     },
     category: {
         type: String,
@@ -17,13 +21,17 @@ const ServerSchema = new mongoose.Schema({
         type: String, 
         default: '',
     },
-    members: {
-        type: Array,
-        default: [],
-    },
-    admin: {
+    members: [{
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
+        ref: 'User'
+    }],
+    ownedChannels: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Channel'
+    }],
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
     },
 }, { timestamps: true });
 

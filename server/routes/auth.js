@@ -3,46 +3,57 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 const jwt = require('jsonwebtoken');
-const verify = require('../middleware/verify');
 
 const generateAccessToken = (user) => {
     return jwt.sign(
-        { userId: user.id }, 
+        { userId: user._id }, 
         process.env.ACCESS_TOKEN_SECRET_KEY, 
-        { expiresIn: '1m' },
+        { expiresIn: '10m' },
     );
 };
 
 const generateRefreshToken = (user) => {
     return jwt.sign(
-        { userId: user.id }, 
+        { userId: user._id }, 
         process.env.REFRESH_TOKEN_SECRET_KEY, 
-        { expiresIn: '1d' },
+        { expiresIn: '15m' },
     );
 };
 
-router.post('/signup', async (req, res) => {
-    const { email, password } = req.body;
+router.post('/register', async (req, res) => {
+    const { email, username, password } = req.body;
 
     try {
-        const usedEmail = await User.findOne({ email }).exec();
+        const usedEmail = await User.findOne({ email });
         if (usedEmail) {
             return res.status(400).json('このメールアドレスは既に使われています');
         }
-        
+
+        let randomNumber;
+        let tag = '#';
+        for (let i = 0; i < 4; i++) {
+            randomNumber = Math.floor(Math.random() * 10);
+            tag += randomNumber;
+        }
+
         const salt = await bcrypt.genSalt();
         const hashedPassword = await bcrypt.hash(password, salt);
+
+        const colorCode = '#' + Math.random().toString(16).slice(-6);
         
         const user = await User.create({
+            tag: username + tag,
             email, 
             password: hashedPassword,
+            displayName: username,
+            color: colorCode,
         });
 
         const accessToken = generateAccessToken(user);
         const refreshToken = generateRefreshToken(user);
 
         await RefreshToken.create({
-            userId: user.id, 
+            userId: user._id, 
             refreshToken, 
         });
 
@@ -60,15 +71,11 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-router.post('/setupprofile', async (req, res) => {
-
-});
-
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email }).exec();
+        const user = await User.findOne({ email }).populate(['joinedServers', 'friends.friend', 'friends.pending', 'friends.waiting', 'friends.blocking', 'friends.blocked', 'friends.dm']);
         if (!user) {
             return res.status(401).json('ユーザーが存在しません');
         }
@@ -82,10 +89,10 @@ router.post('/login', async (req, res) => {
             const accessToken = generateAccessToken(user);
             const refreshToken = generateRefreshToken(user);
 
-            const token = await RefreshToken.findOne({ userId: user.id }).exec();
+            const token = await RefreshToken.findOne({ userId: user._id });
             if (!token) {
                 await RefreshToken.create({
-                    userId: user.id, 
+                    userId: user._id, 
                     refreshToken 
                 });
 
@@ -110,16 +117,19 @@ router.post('/login', async (req, res) => {
     }
 });
 
-router.post('/logout', verify, async (req, res) => {
+router.post('/logout', async (req, res) => {
     const refreshToken = req.cookies.refresh_token;
+    
     try {
-        const token = await RefreshToken.findOne({ refreshToken }).exec();
+        const token = await RefreshToken.findOne({ refreshToken });
         if (token) {
-            await token.remove();
+            await token.deleteOne();
         }
         
         res.clearCookie('access_token');
         res.clearCookie('refresh_token');
+
+        return res.status(200).json('ログアウトしました');
         
     } catch (err) {
         return res.status(500).json(err);
@@ -131,12 +141,11 @@ router.post('/refreshtoken', async (req, res) => {
     if (!refreshToken) {
         return res.status(401).json('更新トークンがありません');
     }
-    console.log(refreshToken)
 
     try {
-        const token = await RefreshToken.findOne({ refreshToken }).exec();
+        const token = await RefreshToken.findOne({ refreshToken });
         if (!token) {
-            return res.status(403).json('トークンが見つかりません');
+            return res.status(401).json('トークン情報が見つかりません');
         }
 
         jwt.verify(
@@ -160,7 +169,7 @@ router.post('/refreshtoken', async (req, res) => {
                     httpOnly: true, 
                 });
 
-                return res.status(200).json({'res': 'トークンを更新しました'});
+                return res.status(200).json('トークンを更新しました');
             }
         );
         

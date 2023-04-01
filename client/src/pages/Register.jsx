@@ -9,21 +9,21 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { discordLogo } from '../assets';
 import { strongPassword, mediumPassword } from '../assets/regexp';
 import MotionForm from '../components/layouts/MotionForm';
-import { useSignUpMutation } from '../redux/apis/authApi';
-import { setCredential } from '../redux/auth/slices';
+import { useRegisterMutation } from '../redux/apis/authApi';
+import { setCredential } from '../redux/slices/authSlice';
 
 const Register = () => {
-  const [isRevealPassword, setIsRevealPassword] = useState(false);
-  const [password, setPassword] = useState({
+  const [ isRevealPassword, setIsRevealPassword ] = useState(false);
+  const [ password, setPassword ] = useState({
     value: '', 
     strength: '', 
     message: '',
   });
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [signUp, {isLoading}] = useSignUpMutation();
+  const [ register ] = useRegisterMutation();
   const {
-    register,
+    register: registerFunc,
     handleSubmit, 
     watch, 
     reset, 
@@ -38,7 +38,7 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = await signUp({...data}).unwrap();
+      const currentUser = await register({...data}).unwrap();
       dispatch(setCredential({...currentUser}));
       reset();
       navigate('/channels/@me');
@@ -54,6 +54,10 @@ const Register = () => {
       value: /^[A-Za-z0-9]{1}[A-Za-z0-9_.-]*@{1}[A-Za-z0-9_.-]+.[A-Za-z0-9]+$/, 
       message: '正しい形式のメールアドレスを入力してください'
     },
+  };
+
+  const usernameValidator = {
+    required: '入力必須項目です',
   };
 
   const passwordValidator = {
@@ -112,6 +116,7 @@ const Register = () => {
                 fontWeight='700'
                 display='flex'
                 alignItems='center'
+                htmlFor='email'
               >
                 {/* 何故か色変化にアニメーションがつくため要素の置換で代用 */}
                 {errors.email 
@@ -131,6 +136,7 @@ const Register = () => {
                     bg='transparent'
                     size='12px'
                     ml='4px'
+                    tabIndex={-1}
                     icon={errors.email ? 
                       <BsQuestionCircle color='#fa777b' /> 
                       : 
@@ -165,7 +171,71 @@ const Register = () => {
                 errorBorderColor='transparent'
                 borderRadius='4px' 
                 autoFocus
-                {...register('email', emailValidator)}
+                {...registerFunc('email', emailValidator)}
+              />
+            </FormControl>
+
+            <FormControl mb='20px' isInvalid={errors.username}>
+              <FormLabel
+                fontSize='12px'
+                lineHeight='16px'
+                fontWeight='700'
+                display='flex'
+                alignItems='center'
+                htmlFor='username'
+              >
+                {/* 何故か色変化にアニメーションがつくため要素の置換で代用 */}
+                {errors.username 
+                  ? <Text color='#fa777b'>ユーザー名</Text>
+                  : <Text color='#b8b9bf'>ユーザー名</Text>
+                }
+
+                <Tooltip 
+                  hasArrow
+                  placement='top-start'
+                  bg='#f3f4f5'
+                  color='#1e1f22'
+                  label='他のユーザーに表示されるニックネームです'
+                >
+                  <IconButton 
+                    aria-label='question-mark'
+                    bg='transparent'
+                    size='12px'
+                    ml='4px'
+                    tabIndex={-1}
+                    icon={errors.username ? 
+                      <BsQuestionCircle color='#fa777b' /> 
+                      : 
+                      <BsQuestionCircle color='#b8b9bf' />
+                    } 
+                    _hover={{backgroundColor: 'transparent'}}
+                    _focus={{boxShadow: 'none'}}
+                  />
+                </Tooltip>
+
+                {errors.username && 
+                  <FormErrorMessage
+                    color='#fa777b'
+                    fontSize='12px'
+                    lineHeight='16px'
+                    fontWeight='500'
+                    m='0 0 0 4px'
+                  >
+                    - {errors.username.message}
+                  </FormErrorMessage>
+                }
+              </FormLabel>
+
+              <Input
+                type='text' 
+                id='username' 
+                bg='#1e1f22' 
+                color='#dbdce0'
+                border='none'
+                focusBorderColor='transparent'
+                errorBorderColor='transparent'
+                borderRadius='4px' 
+                {...registerFunc('username', usernameValidator)}
               />
             </FormControl>
 
@@ -176,6 +246,7 @@ const Register = () => {
                 fontWeight='700'
                 display='flex'
                 alignItems='center'
+                htmlFor='password'
               >
                 {errors.password 
                   ? <Text color='#fa777b'>パスワード</Text>
@@ -194,6 +265,7 @@ const Register = () => {
                     bg='transparent'
                     size='12px'
                     ml='4px'
+                    tabIndex={-1}
                     icon={errors.password ? 
                       <BsQuestionCircle color='#fa777b' /> 
                       : 
@@ -210,8 +282,7 @@ const Register = () => {
                     fontSize='12px'
                     lineHeight='16px'
                     fontWeight='500'
-                    m='0'
-                    ml='4px'
+                    m='0 0 0 4px'
                   >
                     - {errors.password.message}
                   </FormErrorMessage>
@@ -235,7 +306,7 @@ const Register = () => {
                   focusBorderColor='transparent'
                   errorBorderColor='transparent'
                   borderRadius='4px'
-                  {...register('password', passwordValidator)}
+                  {...registerFunc('password', passwordValidator)}
                 />
 
                 <InputRightElement>
@@ -254,8 +325,7 @@ const Register = () => {
             </FormControl>
 
             <FormControl mt='12px'>
-              <Checkbox 
-                size='lg' 
+              <Checkbox size='lg' 
                 css={css`
                   span:first-of-type {
                     border-width: 1px;
@@ -266,7 +336,7 @@ const Register = () => {
                     background-color: #5865f2;
                   }
                 `}
-                {...register('checked')}
+                {...registerFunc('checked')}
               >
                 <Text fontSize='12px' lineHeight='16px' color='#e0e1e5'>
                   Discordの

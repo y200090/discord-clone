@@ -1,143 +1,118 @@
-import { Box, Button, Flex, Heading, IconButton, Text, Tooltip } from '@chakra-ui/react'
+import { Box, Button, Flex, Heading, IconButton, Link as ChakraLink, TabList, Tabs, Text, Tooltip, Icon, Tab, TabPanels, TabPanel } from '@chakra-ui/react'
 import { css } from '@emotion/react'
 import React from 'react'
 import { BsPersonCheckFill } from 'react-icons/bs'
-import { MdAdd } from 'react-icons/md'
-import SkeletonBox from '../assets/SkeletonBox'
+import { AddToFriend, Blocking, Online, Pending, ShowAll } from '../features'
 
 const Friends = () => {
+  const friendItems = ['オンライン', '全て表示', '保留中', 'ブロック中', 'フレンドに追加'];
+  
   return (
     <>
-      <Flex
-        as={'nav'}
-        w='240px'
-        flex='0 0 auto'
-        flexDirection='column'
-        bg='#2b2d31'
+      <Tabs variant='unstyled' 
+        h='100%' w='100%' minW='0px'
+        display='flex' flexDirection='column'
       >
-        <Flex
-          h='48px'
-          w='100%'
+        <Flex as={'header'} align='center'
+          position='relative'
+          h='48px' w='100%' minW='0px' p='0 8px'
           flex='0 0 auto'
-          align='center'
           boxShadow='
-            0 1px 0 #1f2023, 
-            0 1.5px 0 #232528, 
-            0 2px 0 #282a2e
+            0 1px 0 #2c2e33,
+            0 1.5px 0 #2a2c31,
+            0 2px 0 #2e3034
           '
-          p='0 10px'
           zIndex='10'
-        >
-          <Button
-            h='28px'
-            w='100%'
-            display='inline-block'
-            p='1px 6px'
-            outline='none'
-            border='none'
-            textAlign='left'
-            bg='#1e1f22'
-            color='#989aa2'
-            borderRadius='4px'
-            fontSize='14px'
-            lineHeight='22px'
-            fontWeight='500'
-            whiteSpace='nowrap'
-            _hover={{
-              opacity: '1',
-              backgroundColor: '#1e1f22'
-            }}
-          >
-            トークに参加または作成する
-          </Button>
-        </Flex>
-
-        <Box
-          w='100%'
-          p='0 0 0 8px'
-          flex='1 1 auto'
           overflow='auto'
+          whiteSpace='nowrap'
           css={css`
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             &::-webkit-scrollbar {
-                width: 8px;
-              }
-              &::-webkit-scrollbar-thumb {
-                background-color: transparent;
-                border-radius: 100px;
-                border: 2px solid transparent;
-                background-clip: content-box;
-              }
-            &:hover {
-              &::-webkit-scrollbar-thumb {
-                background-color: #1a1b1e;
-              }
+              display: none;
             }
           `}
         >
-          <Box h='42px' w='100%' mt='9px'>
-            <Button 
-              leftIcon={
-                <BsPersonCheckFill size={24} />
-              }
-              justifyContent='flex-start'
-              columnGap='4px'
-              h='100%'
-              w='100%'
-              color='#f3f4f5'
-              bg='#404249'
-              borderRadius='4px'
-              lineHeight='20px'
-              fontWeight='500'
-              _hover={{
-                backgroundColor: '#35373c'
-              }}
-            >
-              フレンド
-            </Button>
-          </Box>
-
-          <Heading
-            h='40px'
-            display='flex'
-            padding='18px 8px 4px 10px'
-            fontSize='12px'
-            lineHeight='16px'
-            fontWeight='600'
-            color='#989aa2'
-            _hover={{
-              color: '#e0e1e5',
-              button: {
-                backgroundColor: 'transparent'
-              }
-            }}
-          >
-            <Text flex='1 1 0%' cursor='default'>
-              ダイレクトメッセージ
-            </Text>
-
-            <Tooltip
-              label='DMを追加'
-              hasArrow
-              placement='top'
-              bg='#111214'
-              color='#e0e1e5'
-            >
-              <IconButton
-                aria-label='add-dm'
-                size={'22'}
-                mr='2px'
-                flex='0 1 0%'
-                bg='transparent'
-                icon={<MdAdd size={22} />}
+          <TabList w='100%' minW='100%'>
+            <Box h='24px' m='0 8px'>
+              <Icon as={BsPersonCheckFill} boxSize='24px'
+                color='#82858f'
               />
-            </Tooltip>
-          </Heading>
+            </Box>
+            <Box h='24px' minW='0px' mr='8px' cursor='default'>
+              <Text color='#f3f4f5' 
+                fontWeight='600' 
+                textOverflow='ellipsis'
+                overflow='hidden'
+                whiteSpace='nowrap'
+              >
+                フレンド
+              </Text>
+            </Box>
+            
+            <Box h='24px' w='1px' bg='#3f4147' m='0 8px' />
 
-          <Flex flexDirection='column' rowGap='12px' p='16px 8px' mb='200px'>
-            <SkeletonBox />
-          </Flex>
-        </Box>
-      </Flex>
+            {friendItems.map((friendItem, i) => (
+              <Tab key={friendItem} aria-label='online'
+                h='26px' w='auto' minW='0px' p='0 8px' m='0 8px'
+                borderRadius='4px'
+                bg={i === 4 ? '#248045' : 'transparent' }
+                color={i === 4 ? '#f3f4f5' : '#b8b9bf'}
+                fontSize='16px'
+                lineHeight='20px'
+                fontWeight='500'
+                _hover={{
+                  color: '#f3f4f5',
+                  bg: i === 4 ? '#248045' : '#393c41',
+                }}
+                _selected={{
+                  color: i === 4 ? '#2dc771' : '#f3f4f5',
+                  bg: i === 4 ? 'transparent' : '#43444b',
+                  '&:hover': { bg: i !== 4 && '#393c41' },
+                }}
+              >
+                <Text m='0 auto'
+                  whiteSpace='nowrap'
+                  textOverflow='ellipsis'
+                  overflow='hidden'
+                >
+                  {friendItem}
+                </Text>
+              </Tab>
+            ))}
+          </TabList>
+        </Flex>
+
+        <TabPanels h='100%' w='100%'>
+          <TabPanel h='100%' w='100%' p='0'
+            display='flex' flexDirection='column'
+          >
+            <Online />
+          </TabPanel>
+
+          <TabPanel h='100%' w='100%' p='0'
+            display='flex' flexDirection='column'
+          >
+            <ShowAll />
+          </TabPanel>
+
+          <TabPanel h='100%' w='100%' p='0' 
+            display='flex' flexDirection='column'
+          >
+            <Pending />
+          </TabPanel>
+
+          <TabPanel h='100%' w='100%' p='0'
+            display='flex' flexDirection='column'
+          >
+            <Blocking />
+          </TabPanel>
+
+          <TabPanel h='100%' w='100%' p='0'>
+            <AddToFriend />
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
     </>
   )
 }

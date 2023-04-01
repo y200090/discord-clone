@@ -1,213 +1,157 @@
-import { Box, Button, Flex, Heading, IconButton, Text, Tooltip, Icon, Input, Avatar } from '@chakra-ui/react'
+import { Box, Button, Flex, Heading, IconButton, Text, Tooltip, useDisclosure } from '@chakra-ui/react'
 import { css } from '@emotion/react'
-import React, { useState } from 'react'
+import React from 'react'
 import { BsPersonCheckFill } from 'react-icons/bs'
 import { MdAdd } from 'react-icons/md'
-import { Link as RouterLink } from 'react-router-dom'
-import AddToFriend from '../AddToFriend'
-import Blocking from '../Blocking'
-import Friends from '../Friends'
-import Online from '../Online'
-import Pending from '../Pending'
-import ShowAll from '../ShowAll'
+import { useSelector } from 'react-redux'
+import { NavLink, Outlet } from 'react-router-dom'
+import { selectCurrentUser } from '../../redux/slices/authSlice'
+import AddToDirectMessage from '../../features/AddToDirectMessage'
+import DirectMessageLink from '../DirectMessageLink'
+import SkeletonBox from '../SkeletonBox'
+import StatusPanel from '../StatusPanel'
 
 const Main = () => {
-  const [activeMenu, setActiveMenu] = useState('add-to-friend');
-  
+  const currentUser = useSelector(selectCurrentUser);
+  const DMs = Object.keys(currentUser).length === 0
+    ? []
+    : currentUser?.friends?.dm;
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const rest = { isOpen: isOpen, onClose: onClose };
+
   return (
     <>
-      <Friends />
-
-      <Flex
-        as={'main'}
-        position='relative'
-        h='100%'
-        w='100%'
-        flexDirection='column'
-        bg='#313338'
-        overflow='hidden'
-      >
-        <Flex 
-          as={'header'} 
-          position='relative'
-          h='48px' 
-          w='100%'
-          flex='0 0 auto'
-          align='center'
-          boxShadow='
-            0 1px 0 #2c2e33,
-            0 1.5px 0 #2a2c31,
-            0 2px 0 #2e3034
-          '
-          p='0 8px'
-          zIndex='10'
-        >
-          <Flex
-            position='absolute'
-            w='100%'
-            flex='1 1 auto'
-            align='center'
-            fontSize='16px'
-            lineHeight='20px'
-            overflow='hidden'
+      <Flex w='240px' direction='column' flex='0 0 auto' bg='#2b2d31'>
+        <Flex as={'nav'} w='100%' direction='column' flex='1 1 auto'>
+          <Flex align='center'
+            h='48px' w='100%' p='0 10px' flex='0 0 auto' 
+            boxShadow='
+              0 1px 0 #1f2023, 
+              0 1.5px 0 #232528, 
+              0 2px 0 #282a2e
+            '
+            zIndex='10'
           >
-            <Box 
-              h='24px'
-              w='auto'
-              flex='0 0 auto'
-              m='0 8px'
+            <Button h='28px' w='100%' p='1px 6px'
+              outline='none' border='none' textAlign='left'
+              bg='#1e1f22' color='#989aa2'
+              borderRadius='4px'
+              fontSize='14px'
+              lineHeight='22px'
+              fontWeight='500'
+              whiteSpace='nowrap'
+              _hover={{ opacity: '1', bg: '#1e1f22' }}
             >
-              <Icon 
-                as={BsPersonCheckFill} 
-                h='24px'
-                w='24px'
-                color='#82858f'
-              />
-            </Box>
+              トークに参加または作成する
+            </Button>
+          </Flex>
 
-            <Box flex='0 0 auto'mr='8px' >
-              <Text 
-                color='#f3f4f5' 
-                fontWeight='600' 
-                pointerEvents='none'
+          <Box w='100%' p='0 0 0 8px' flex='1 1 auto' overflow='scroll'
+            css={css`
+              &::-webkit-scrollbar {
+                height: 100%;
+                width: 8px;
+              }
+              &::-webkit-scrollbar-thumb {
+                background-color: transparent;
+                border-radius: 100px;
+                border: 2px solid transparent;
+                background-clip: content-box;
+              }
+              &:hover {
+                &::-webkit-scrollbar-thumb {
+                  background-color: #1a1b1e;
+                }
+              }
+            `}
+          >
+            <Box h='42px' w='100%' mt='9px'>
+              <Button as={NavLink} to='/channels/@me' end
+                leftIcon={<BsPersonCheckFill size={24} />}
+                justifyContent='flex-start' columnGap='4px'
+                h='100%' w='100%'
+                color='#f3f4f5' bg='transparent'
+                borderRadius='4px'
+                lineHeight='20px'
+                fontWeight='500'
+                _hover={{ bg: '#35373c' }}
+                _activeLink={{ 
+                  bg: '#404249', 
+                  '&:hover': { bg: '#35373c' }
+                }}
               >
                 フレンド
-              </Text>
+              </Button>
             </Box>
-            
-            <Box h='24px' w='1px' bg='#3f4147' m='0 8px' flex='0 0 auto' />
 
-            <Flex>
-              <Button 
-                aria-label='online'
-                isActive={activeMenu == 'online'}
-                h='26px'
-                p='0 8px'
-                m='0 8px'
-                bg='transparent' 
-                color='#b8b9bf'
-                fontWeight='500'
-                onClick={() => setActiveMenu('online')}
-                _hover={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#393c41'
-                }}
-                _active={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#43444b',
-                  '&:hover': {
-                    backgroundColor: '#393c41'
-                  }
-                }}
-              >
-                オンライン
-              </Button>
+            <Heading display='flex'
+              h='40px' padding='18px 8px 4px 10px'
+              fontSize='12px' lineHeight='16px' fontWeight='600'
+              color='#949ba4'
+              _hover={{ p: { color: '#e0e1e5' } }}
+            >
+              <Text flex='1 1 0%' cursor='default'>
+                ダイレクトメッセージ
+              </Text>
 
-              <Button 
-                aria-label='show-all'
-                isActive={activeMenu == 'show-all'}
-                h='26px'
-                p='0 8px'
-                m='0 8px'
-                bg='transparent' 
-                color='#b8b9bf'
-                fontWeight='500'
-                onClick={() => setActiveMenu('show-all')}
-                _hover={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#393c41'
-                }}
-                _active={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#43444b',
-                  '&:hover': {
-                    backgroundColor: '#393c41'
-                  }
-                }}
+              <Tooltip label='DMの作成'
+                hasArrow placement='top'
+                bg='#111214' color='#e0e1e5'
+                p='6px 10px' borderRadius='4px'
               >
-                全て表示
-              </Button>
+                <IconButton aria-label='add-to-dm'
+                  size={'22'} icon={<MdAdd size={22} />}
+                  flex='0 1 0%' bg='transparent'
+                  _hover={{ color: '#e0e1e5', bg: 'transparent' }}
+                  onClick={(e) => { 
+                    e.stopPropagation(); 
+                    onOpen(); 
+                  }}
+                />
+              </Tooltip>
+            </Heading>
 
-              <Button
-                aria-label='pending'
-                isActive={activeMenu == 'pending'}
-                h='26px'
-                p='0 8px'
-                m='0 8px'
-                bg='transparent' 
-                color='#b8b9bf'
-                fontWeight='500'
-                onClick={() => setActiveMenu('pending')}
-                _hover={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#393c41'
-                }}
-                _active={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#43444b',
-                  '&:hover': {
-                    backgroundColor: '#393c41'
-                  }
-                }}
-              >
-                保留中
-              </Button>
+            <Flex as={'ul'} flexDirection='column'>
+              {DMs?.length
+                ? DMs?.map((dm) => {
+                    const friend = dm.friends.filter((friend) => {
+                      return friend._id !== currentUser?._id;
+                    });
 
-              <Button
-                aria-label='blocking'
-                isActive={activeMenu == 'blocking'}
-                h='26px'
-                p='0 8px'
-                m='0 8px'
-                bg='transparent' 
-                color='#b8b9bf'
-                fontWeight='500'
-                onClick={() => setActiveMenu('blocking')}
-                _hover={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#393c41'
-                }}
-                _active={{
-                  color: '#f3f4f5',
-                  backgroundColor: '#43444b',
-                  '&:hover': {
-                    backgroundColor: '#393c41'
-                  }
-                }}
-              >
-                ブロック中
-              </Button>
-
-              <Button
-                aria-label='add-to-friend'
-                isActive={activeMenu == 'add-to-friend'}
-                h='26px'
-                p='0 8px'
-                m='0 8px'
-                bg='#248045' 
-                color='#f3f4f5'
-                fontWeight='500'
-                onClick={() => setActiveMenu('add-to-friend')}
-                _hover={{
-                  backgroundColor: '#248045'
-                }}
-                _active={{
-                  backgroundColor: 'transparent',
-                  color: '#2dc771'
-                }}
-              >
-                フレンドに追加
-              </Button>
+                    return (
+                      <DirectMessageLink
+                        key={dm._id} 
+                        toURL={dm._id}
+                        {...(friend.length < 2 
+                          ? {photoURL: friend[0].photoURL}
+                          : { group: true }
+                        )}
+                        displayName={friend.length < 2
+                          ? friend[0].displayName
+                          : dm.title
+                        }
+                        color={friend.length < 2
+                          ? friend[0].color
+                          : dm.color
+                        }
+                        {...(friend.length < 2 && {description: friend[0].description})}
+                      />
+                    )
+                  })
+                : <SkeletonBox />
+              }
             </Flex>
-          </Flex>
+          </Box>
         </Flex>
 
-        <Online active={activeMenu == 'online'} />
-        <ShowAll active={activeMenu == 'show-all'} />
-        <Pending active={activeMenu == 'pending'} />
-        <Blocking active={activeMenu == 'blocking'} />
-        <AddToFriend active={activeMenu == 'add-to-friend'} />
+        <StatusPanel />
       </Flex>
+
+      <Flex as={'main'} direction='column' position='relative' h='100%' w='100%' minW='0px' bg='#313338'>
+        <Outlet />
+      </Flex>
+
+      <AddToDirectMessage {...rest} />
     </>
   )
 }

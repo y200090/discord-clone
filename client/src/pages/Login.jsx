@@ -1,20 +1,21 @@
 import { Box, Button, FormControl, FormErrorMessage, FormLabel, Heading, IconButton, Image, Input, InputGroup, InputRightElement, Link as ChakraLink, Text, VStack } from '@chakra-ui/react'
 import styled from '@emotion/styled'
-import React, { useState } from 'react'
-import { Link as RouterLink, useNavigate } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md'
 import MotionForm from '../components/layouts/MotionForm'
 import { discordLogo } from '../assets'
-import { useDispatch } from 'react-redux'
-import { useLogInMutation } from '../redux/apis/authApi'
-import { setCredential } from '../redux/auth/slices'
+import { useDispatch, useSelector } from 'react-redux'
+import { useLoginMutation } from '../redux/apis/authApi'
+import { selectCurrentUser, setCredential } from '../redux/slices/authSlice'
 
 const Login = () => {
-  const [isRevealPassword, setIsRevealPassword] = useState(false);
+  const [ isRevealPassword, setIsRevealPassword ] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
-  const [logIn, {isLoading}] = useLogInMutation();
+  const [ login ] = useLoginMutation();
   const {
     register, 
     handleSubmit, 
@@ -29,10 +30,10 @@ const Login = () => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = await logIn({...data}).unwrap();
-      dispatch(setCredential({...currentUser}));
+      const user = await login({...data}).unwrap();
+      dispatch(setCredential({...user}));
       reset();
-      navigate('/channels/@me');
+      navigate(location?.state?.referrer || '/channels/@me');
       
     } catch (err) {
       console.log(err?.data);
@@ -58,7 +59,7 @@ const Login = () => {
 
   return (
     <>
-      <MotionForm>
+      <MotionForm {...(location?.state?.redirect && {redirect: true})}>
         <form onSubmit={handleSubmit(onSubmit)}>
           <VStack w='100%' align='center' spacing='4px' mb='20px'>
             <Box

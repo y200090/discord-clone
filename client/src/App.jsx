@@ -1,8 +1,7 @@
 import React from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
-import { Chat, Main, Search, Server } from './components'
-import { Home, Login, Register, User } from './pages'
-import ProtectedRoute from './utils/ProtectedRoute'
+import { Chat, Friends, Main, ProtectedRoute, Server } from './components'
+import { GuildDiscovery, Home, Login, Register, User } from './pages'
 
 const App = () => {
   return (
@@ -11,19 +10,22 @@ const App = () => {
       <Route path='/login' element={<Login />} />
       <Route path='/register' element={<Register />} />
 
-      <Route element={<ProtectedRoute />}>
+      {/* <Route element={<ProtectedRoute />}> */}
         <Route element={<User />}>
           <Route path='/channels'>
             <Route index element={<Navigate to={'@me'} />} />
-            <Route path='@me' element={<Main />} />
+            <Route path='@me' element={<Main />}>
+              <Route index element={<Friends />} />
+              <Route path=':channelId' element={<Chat />} />
+            </Route>
             <Route path=':serverId' element={<Server />}>
               <Route index element={<Chat />} />
               <Route path=':channelId' element={<Chat />} />
             </Route>
           </Route>
-          <Route path='/search' element={<Search />} />
+          <Route path='/guild-discovery' element={<GuildDiscovery />} />
         </Route>
-      </Route>
+      {/* </Route> */}
     </Routes>
   )
 }
