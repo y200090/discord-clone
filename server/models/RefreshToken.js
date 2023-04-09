@@ -9,13 +9,13 @@ const RefreshTokenSchema = new mongoose.Schema({
         type: String, 
         required: true
     },
-    expireAt: {
-        type: Date,
-        default: Date.now,
-        index: {
-            expires: '15m'
-        }
-    }
+    // expireAt: {
+    //     type: Date,
+    //     default: Date.now,
+    //     index: {
+    //         expires: 300
+    //     }
+    // }
 });
 
 module.exports = mongoose.model('RefreshToken', RefreshTokenSchema);

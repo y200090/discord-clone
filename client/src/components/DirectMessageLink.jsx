@@ -2,22 +2,19 @@ import { Avatar, AvatarBadge, Box, IconButton, Link as ChakraLink, Text } from '
 import React from 'react'
 import { FaDiscord } from 'react-icons/fa'
 import { MdClose, MdPeopleAlt } from 'react-icons/md'
-import { useSelector } from 'react-redux'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { useRemoveDMMutation } from '../redux/apis/friendApi'
-import { selectCurrentUser } from '../redux/slices/authSlice'
+import { useRemoveDirectMessageMutation } from '../redux/apis/channelApi' 
 
 const DirectMessageLink = (props) => {
-  const { toURL, photoURL, group, displayName, color, description } = props;
-  const currentUser = useSelector(selectCurrentUser);
+  const { toURL, currentUser, notifications, photoURL, groupDM, title, color, status } = props;
   const navigate = useNavigate();
-  const [ RemoveDM ] = useRemoveDMMutation();
-
+  const [ RemoveDirectMessage ] = useRemoveDirectMessageMutation();
+  
   const handleRemoveDM = async (e) => {
     e.preventDefault();
 
     try {
-      await RemoveDM({
+      await RemoveDirectMessage({
         currentUserId: currentUser?._id,
         directMessageId: toURL
       });
@@ -43,6 +40,9 @@ const DirectMessageLink = (props) => {
             },
             'div > span > div': {
               borderColor: '#35373c',
+              'div': {
+                bg: '#404249'
+              }
             },
             button: {
               color: '#aaacb0',
@@ -55,7 +55,10 @@ const DirectMessageLink = (props) => {
             bg: '#404249', 
             '&:hover': { bg: '#35373c' },
             'div > span > div': {
-              borderColor: '#404249'
+              borderColor: '#404249',
+              'div': {
+                bg: '#404249'
+              }
             },
             'div > p': {
               color: '#dbdee1'
@@ -63,36 +66,41 @@ const DirectMessageLink = (props) => {
           }}
         >
           <Box flex='0 0 auto' h='32px' w='32px' mr='12px'>
-            <Avatar boxSize='32px' bg={color}
+            <Avatar boxSize='32px' bg={color} position='relative'
               {...(photoURL 
                 ? {src: photoURL}
-                : (group 
-                    ? {icon: <MdPeopleAlt />}
-                    : {icon: <FaDiscord />}
-                  )
+                : (groupDM 
+                  ? {icon: <MdPeopleAlt />}
+                  : {icon: <FaDiscord />}
+                )
               )}
             >
-              <AvatarBadge  boxSize='16px' bg='#23a55a' borderColor='#2b2d31' />
+              {status === 'オンライン'
+                ? <AvatarBadge boxSize='16px' bg='#23a55a' borderColor='#2b2d31' />
+                : status === 'オフライン' &&
+                  <AvatarBadge boxSize='16px' bg='#80848e' borderColor='#2b2d31'>
+                    <Box h='4px' w='4px' bg='#2b2d31' borderRadius='100%' />
+                  </AvatarBadge>
+              }
             </Avatar>
           </Box>
+
           <Box flex='1 1 auto' minW='0px' color='#949ba4'
-            whiteSpace='nowrap'
-            overflow='hidden'
-            textOverflow='ellipsis'
+            whiteSpace='nowrap' overflow='hidden' textOverflow='ellipsis'
           >
             <Text fontSize='16px' lineHeight='20px' fontWeight='500'>
-              {displayName}
+              {title}
             </Text>
             <Text mt='-2px'
-              fontSize='12px'
-              lineHeight='16px'
-              fontWeight='500'
-              whiteSpace='nowrap'
-              overflow='hidden'
-              textOverflow='ellipsis'
+              fontSize='12px' lineHeight='16px' fontWeight='500'
+              whiteSpace='nowrap' overflow='hidden' textOverflow='ellipsis'
             >
-              {description}
+              {status}
             </Text>
+          </Box>
+
+          <Box>
+            {notifications.length}
           </Box>
 
           <IconButton aria-label='delete-dm'

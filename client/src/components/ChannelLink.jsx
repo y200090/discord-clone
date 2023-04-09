@@ -5,6 +5,8 @@ import { RiSettings5Fill } from 'react-icons/ri'
 import { BiHash } from 'react-icons/bi'
 import { NavLink } from 'react-router-dom'
 import { HiSpeakerWave } from 'react-icons/hi2'
+import { MdPersonAddAlt1 } from 'react-icons/md'
+import { SettingsIcon } from '@chakra-ui/icons'
 
 const ChannelLink = (props) => {
   const { toURL, channelName, category, isOpen } = props;
@@ -51,23 +53,25 @@ const ChannelLink = (props) => {
             {channelName}
           </Text>
 
-          <ButtonGroup ml='auto' display='none'>
+          <ButtonGroup m='0 1px 0 auto' display='none'>
             <Tooltip label='招待を作成'
               hasArrow placement='top'
+              p='6px 10px' borderRadius='4px'
               bg='#111214' color='#e0e1e5'
             >
               <IconButton aria-label='招待を作成'
-                icon={<BsPersonPlusFill size={18} />} size={18}
-                bg='transparent' color='#b8b9bf'
+                icon={<MdPersonAddAlt1 size={16} />} size={16}
+                bg='transparent' color='#b8b9bf' mr='-4px'
                 _hover={{ bg: 'transparent', color: '#dcdde1' }}
               />
             </Tooltip>
             <Tooltip label='チャンネルの編集'
               hasArrow placement='top'
+              p='6px 10px' borderRadius='4px'
               bg='#111214' color='#e0e1e5'
             >
               <IconButton aria-label='チャンネルの編集'
-                icon={<RiSettings5Fill size={18} />} size={18}
+                icon={<SettingsIcon size={16} p='1.5px' />} size={16}
                 bg='transparent' color='#b8b9bf'
                 _hover={{ bg: 'transparent', color: '#dcdde1' }}
               />

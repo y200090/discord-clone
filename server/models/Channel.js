@@ -5,8 +5,9 @@ const ChannelSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    serverId: {
+    parentServer: {
         type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Server'
     },
     privateChannel: {
         type: Boolean,
@@ -20,7 +21,7 @@ const ChannelSchema = new mongoose.Schema({
         type: String, 
         default: ''
     }, 
-    allowedUser: [{
+    allowedUsers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }],
@@ -28,14 +29,22 @@ const ChannelSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    friends: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
     color: {
         type: String,
         default: ''
-    }
-}, { timestamps: true });
+    },
+    notifications: [{
+        recipient: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        content: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Message'
+        }
+    }],
+}, { 
+    timestamps: true 
+});
 
 module.exports = mongoose.model('Channel', ChannelSchema);

@@ -14,8 +14,7 @@ const NavIcon = (props) => {
           p='6px 10px' bg='#111214' color='#e0e1e5'
           fontSize='16px' fontWeight='600' borderRadius='4px'
         >
-          <ChakraLink
-            tabIndex={-1}
+          <ChakraLink tabIndex={-1}
             {...(toURL && {as: NavLink} )}
             {...(indexURL ? {to: toURL+'/'+indexURL} : {to: toURL})}
             {...(onClick && {onClick: onClick})}
@@ -58,14 +57,12 @@ const NavIcon = (props) => {
             })}
           >
             {photoURL 
-              ? <Image src={photoURL} boxSize='48px'
-                  borderRadius='50%' 
-                  transition='all 0.15s ease-out' 
+              ? <Image src={photoURL} boxSize='48px' 
+                  borderRadius='50%' transition='all 0.15s ease-out' 
                 />
               : <Avatar icon={avatarIcon} 
                   bg='#313338' color={color.inactive} 
-                  borderRadius='50%'
-                  transition='all 0.15s ease-out' 
+                  borderRadius='50%' transition='all 0.15s ease-out' 
                 />
             }
           </ChakraLink>
@@ -78,8 +75,7 @@ const NavIcon = (props) => {
         >
           <Box className='currentActive'
             h='20px' w='0%' bg='#f3f4f5' opacity='0'
-            borderRadius='0px 4px 4px 0px'
-            transition='all 0.2s ease-out'
+            borderRadius='0px 4px 4px 0px' transition='all 0.2s ease-out'
           />
         </Flex>
       </Flex>

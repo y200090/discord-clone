@@ -37,8 +37,4 @@ mongoose.connect(process.env.MONGODB_URL).then(() => {
     console.log('Connected to MongoDB!');
 });
 
-const port = process.env.PORT || 8000;
-
-app.listen(port, () => {
-    console.log('Server is running!');
-});
+module.exports = app;

@@ -1,3 +1,4 @@
+import { socket } from "../../socket";
 import { apiSlice } from "../slices/apiSlice";
 
 export const userApi = apiSlice.injectEndpoints({
@@ -7,33 +8,38 @@ export const userApi = apiSlice.injectEndpoints({
                 url: '/user/authenticated',
                 method: 'GET', 
             }),
-            providesTags: ['User']
+            providesTags: ['User'],
+            async onCacheEntryAdded(
+                arg,
+                { cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                socket.connect();
+
+                try {
+                    const result = await cacheDataLoaded;
+                    // if (result?.data) {
+                    //     socket.emit('online', result?.data);
+                    // }
+
+                    await cacheEntryRemoved;
+
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
-        getUserInfo: builder.query({
-            query: (uid) => ({
-                url: `/user/info/${uid}`,
-                method: 'GET', 
-            })
+        EditUserProfile: builder.mutation({
+            query: (body) => ({
+                url: '/user/edit/profile', 
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['User']
         }),
-        getPendingUserInfos: builder.query({
-            query: (uid) => ({
-                url: `/user/infos/friends/pendingUser/${uid}`,
-                method: 'GET',
-            })
-        }),
-        getWaitingUserInfos: builder.query({
-            query: (uids) => ({
-                url: `/user/infos/friends/waitingUser/${uids}`,
-                method: 'GET',
-            })
-        }),
-        // selectUserInfos: builder.query({
-        //     query: (uids) => ({
-        //         url: `/user/infos/select/${uids}`,
-        //         method: 'GET',
-        //     })
-        // }),
     })
 });
 
-export const { useGetCurrentUserQuery, useGetUserInfoQuery, useGetPendingUserInfosQuery, useGetWaitingUserInfosQuery } = userApi;
+export const { 
+    useGetCurrentUserQuery, 
+    useEditUserProfileMutation,
+} = userApi;

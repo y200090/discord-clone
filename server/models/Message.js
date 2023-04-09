@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const MessageSchema = new mongoose.Schema({
-    channelId: {
+    postedChannel: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'
     },
@@ -9,14 +9,21 @@ const MessageSchema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    sendedBy: {
+    sender: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-    threadIds: [{
+    readUsers: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    reactions: {},
+    threads: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Thread'
     }]
-}, { timestamps: true });
+}, { 
+    timestamps: true 
+});
 
 module.exports = mongoose.model('Message', MessageSchema);

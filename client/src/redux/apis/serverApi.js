@@ -10,17 +10,30 @@ export const serverApi = apiSlice.injectEndpoints({
             }),
             invalidatesTags: ['Server', 'User'],
         }),
-        // joinServer: builder.mutation({
-        //     query(data) {
-        //         const { serverId, ...body } = data;
-        //         return {
-        //             url: `/server/join/${serverId}`,
-        //             method: 'PATCH',
-        //             body,
-        //         }
-        //     },
-        //     invalidatesTags: ['Server', 'User'],
-        // }),
+        ServerJoining: builder.mutation({
+            query: (body) => ({
+                url: '/server/join',
+                method: 'POST',
+                body,
+            }),
+            invalidatesTags: ['Server', 'User']
+        }),
+        ServerInvitation: builder.mutation({
+            query: (body) => ({
+                url: '/server/invitation',
+                method: 'POST',
+                body
+            }),
+            invalidatesTags: ['Server', 'User']
+        }),
+        ServerEditProfile: builder.mutation({
+            query: (body) => ({
+                url: '/server/edit/profile',
+                method: 'POST',
+                body
+            }),
+            invalidatesTags: ['Server', 'User']
+        }),
         getServerInfo: builder.query({
             query: (serverId) => ({
                 url: `/server/info/${serverId}`,
@@ -28,14 +41,13 @@ export const serverApi = apiSlice.injectEndpoints({
             }),
             providesTags: ['Server']
         }),
-        // getJoinedServers: builder.query({
-        //     query: (uid) => ({
-        //         url: `/server/infos/joined/${uid}`,
-        //         method: 'GET',
-        //     }),
-        //     providesTags: ['Server'],
-        // }),
     })
 });
 
-export const { useServerCreationMutation, useJoinServerMutation, useGetServerInfoQuery, useGetJoinedServersQuery } = serverApi;
+export const { 
+    useServerCreationMutation, 
+    useServerJoiningMutation, 
+    useGetServerInfoQuery, 
+    useServerInvitationMutation, 
+    useServerEditProfileMutation 
+} = serverApi;

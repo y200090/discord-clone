@@ -8,7 +8,7 @@ import { useChannelCreationMutation } from '../redux/apis/channelApi'
 import { useNavigate } from 'react-router-dom'
 
 const CreateChannel = (props) => {
-  const { isOpen, onClose, serverId } = props;
+  const { isOpen, onClose, server } = props;
   const [ channelName, setChannelName ] = useState('');
   const [ category, setCategory ] = useState('テキストチャンネル');
   const [ privateChannel, setPrivateChannel ] = useState(false);
@@ -19,7 +19,17 @@ const CreateChannel = (props) => {
     e.preventDefault();
 
     try {
-      const newChannel = await ChannelCreation({ channelName, serverId, category, privateChannel }).unwrap();
+      const members = server.members.map((member) => {
+        return member._id
+      });
+      
+      const newChannel = await ChannelCreation({ 
+        channelName, 
+        serverId: server._id, 
+        category, 
+        privateChannel, 
+        allowedUsers: members 
+      }).unwrap();
 
       console.log(newChannel);
 

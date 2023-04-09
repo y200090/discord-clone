@@ -30,42 +30,28 @@ const UserSchema = new mongoose.Schema({
         type: String, 
         default: '',
     },
-    friends: {
-        // フレンド状態
-        friend: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }], 
-        // 保留中
-        pending: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }],
-        // 返答待ち中
-        waiting: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }],
-        // ブロック中
-        blocking: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }],
-        // 被フロック中
-        blocked: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User'
-        }],
-        // DM
-        dm: [{
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'Channel'
-        }]
-    },
+    friends: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    }],
+    setDirectMessages: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Channel'
+    }],
     joinedServers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Server'
     }],
-}, { timestamps: true });
+    online: {
+        type: Boolean,
+        default: false
+    },
+    socketId: {
+        type: String,
+        default: ''
+    }
+}, { 
+    timestamps: true 
+});
 
 module.exports = mongoose.model('User', UserSchema);

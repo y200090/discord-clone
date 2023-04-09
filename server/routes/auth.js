@@ -8,7 +8,7 @@ const generateAccessToken = (user) => {
     return jwt.sign(
         { userId: user._id }, 
         process.env.ACCESS_TOKEN_SECRET_KEY, 
-        { expiresIn: '10m' },
+        { expiresIn: '1m' },
     );
 };
 
@@ -16,7 +16,7 @@ const generateRefreshToken = (user) => {
     return jwt.sign(
         { userId: user._id }, 
         process.env.REFRESH_TOKEN_SECRET_KEY, 
-        { expiresIn: '15m' },
+        { expiresIn: '5m' },
     );
 };
 
@@ -75,7 +75,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email }).populate(['joinedServers', 'friends.friend', 'friends.pending', 'friends.waiting', 'friends.blocking', 'friends.blocked', 'friends.dm']);
+        const user = await User.findOne({ email }).populate(['friends', 'setDirectMessages', 'joinedServers']);
         if (!user) {
             return res.status(401).json('ユーザーが存在しません');
         }

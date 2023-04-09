@@ -2,19 +2,19 @@ import { Avatar, Box, Flex, IconButton, Popover, PopoverArrow, PopoverBody, Popo
 import React from 'react'
 import { MdKeyboardVoice } from 'react-icons/md';
 import { BsHeadphones } from 'react-icons/bs';
-import { RiSettings5Fill } from 'react-icons/ri';
 import { css } from '@emotion/react';
 import Settings from './Settings';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../redux/slices/authSlice';
 import { FaDiscord } from 'react-icons/fa';
+import { SettingsIcon } from '@chakra-ui/icons';
 
 const StatusPanel = () => {
   const currentUser = useSelector(selectCurrentUser);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { isOpen: isOpen, onClose: onClose };
 
-  const copyTextToClipboard = async (e) => {
+  const copyTextToClipboard = async () => {
     await navigator.clipboard.writeText(currentUser?.tag);
   };
   
@@ -103,7 +103,7 @@ const StatusPanel = () => {
               bg='#111214' color='#e0e1e5'
             >
               <IconButton aria-label='ユーザー設定'
-                icon={<RiSettings5Fill size='21px' />} size={'sm'}
+                icon={<SettingsIcon boxSize='21px' p='2px' />} size={'sm'}
                 color='#b5bac1' bg='transparent'
                 borderRadius='4px'
                 _hover={{ bg: '#3d3e45' }}

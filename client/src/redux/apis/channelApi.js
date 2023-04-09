@@ -16,18 +16,37 @@ export const channelApi = apiSlice.injectEndpoints({
                 method: 'GET',
             })
         }),
-        // getOwnedChannels: builder.query({
-        //     query: (serverId) => ({
-        //         url: `/channel/infos/owned/${serverId}`,
-        //         method: 'GET',
-        //     })
-        // }),
+        AppendDirectMessage: builder.mutation({
+            query: (body) => ({
+                url: '/channel/DM/append',
+                method: 'POST',
+                body
+            }),
+            invalidatesTags: ['User']
+        }),
+        RemoveDirectMessage: builder.mutation({
+            query: (body) => ({
+                url: '/channel/DM/remove',
+                method: 'POST',
+                body
+            }), 
+            invalidatesTags: ['User']
+        }),
+        GroupDirectMessageCreation: builder.mutation({
+            query: (body) => ({
+                url: '/channel/groupDM/create',
+                method: 'POST',
+                body
+            }), 
+            invalidatesTags: ['User']
+        }),
     })
 });
 
 export const { 
     useChannelCreationMutation, 
     useGetChannelInfoQuery, 
-    useDirectMessageCreationMutation,
-    useGetOwnedChannelsQuery 
+    useAppendDirectMessageMutation,
+    useRemoveDirectMessageMutation,
+    useGroupDirectMessageCreationMutation
 } = channelApi;

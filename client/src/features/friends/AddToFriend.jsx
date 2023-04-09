@@ -3,15 +3,12 @@ import { css } from '@emotion/react';
 import React, { useState } from 'react'
 import { IoMdCompass } from 'react-icons/io';
 import { MdOutlineArrowForwardIos } from 'react-icons/md';
-import { useSelector } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
-import { useFriendRequestMutation } from '../../redux/apis/friendApi';
-import { selectCurrentUser } from '../../redux/slices/authSlice';
+import { usePostFriendRequestMutation } from '../../redux/apis/friendApi';
+import { socket } from '../../socket';
 
-const AddToFriend = () => {
-  const currentUser = useSelector(selectCurrentUser);
-  const [ 
-    FriendRequest, 
+const AddToFriend = ({ currentUser }) => {
+  const [ PostFriendRequest, 
     { 
       isLoading, 
       isSuccess, 
@@ -19,14 +16,16 @@ const AddToFriend = () => {
       isError,
       error
     } 
-  ] = useFriendRequestMutation();
+  ] = usePostFriendRequestMutation();
   const [ targetTag, setTargetTag ] = useState('');
 
   const handleRequest = async (e) => {
     e.preventDefault();
 
     try {
-      await FriendRequest({ currentUser, targetTag });
+      await PostFriendRequest({ currentUser, targetTag });
+
+      // socket.emit('send_request', targetTag);
 
     } catch (err) {
       console.log(err);
@@ -114,7 +113,7 @@ const AddToFriend = () => {
               color={isSuccess ? '#23a559' : isError && '#f23f42'} 
               mt='8px' fontSize='14px' lineHeight='20px' fontWeight='400' 
             >
-              {isSuccess ? data : isError && error?.data}
+              {isSuccess ? data?.message : isError && error?.data}
             </Text>
           )}
         </Box>

@@ -11,7 +11,7 @@ const ServerSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        default: 'その他'
+        default: ''
     },
     tags: {
         type: Array,
@@ -33,6 +33,8 @@ const ServerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
-}, { timestamps: true });
+}, { 
+    timestamps: true 
+});
 
 module.exports = mongoose.model('Server', ServerSchema);

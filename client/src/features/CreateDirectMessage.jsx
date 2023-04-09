@@ -5,26 +5,27 @@ import { FaDiscord } from 'react-icons/fa';
 import { SlClose } from 'react-icons/sl';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useAddToDMMutation } from '../redux/apis/friendApi';
+import { useAppendDirectMessageMutation, useGroupDirectMessageCreationMutation } from '../redux/apis/channelApi';
 import { selectCurrentUser } from '../redux/slices/authSlice';
 
-const AddToDirectMessage = ({ isOpen, onClose }) => {
+const CreateDirectMessage = ({ isOpen, onClose }) => {
   const currentUser = useSelector(selectCurrentUser);
   const friends = Object.keys(currentUser).length === 0
     ? []
-    : currentUser.friends.friend;
-  const [ AddToDM ] = useAddToDMMutation();
+    : currentUser.friends;
+  const [ AppendDirectMessage ] = useAppendDirectMessageMutation();
+  const [ GroupDirectMessageCreation ] = useGroupDirectMessageCreationMutation()
   const navigate = useNavigate();
-  const [ targetUserIds, setTargetUserIds ] = useState([]);
+  const [ targetUsers, setTargetUsers ] = useState([]);
 
   const changeSelectUser = (e) => {
     if (!e.target.checked) {
-      setTargetUserIds(
-        targetUserIds.filter((userId) => (userId !== e.target.value))
+      setTargetUsers(
+        targetUsers.filter((userId) => (userId !== e.target.value))
       );
 
     } else {
-      setTargetUserIds([...targetUserIds, e.target.value]);
+      setTargetUsers([...targetUsers, e.target.value]);
     }
   };
 
@@ -32,13 +33,22 @@ const AddToDirectMessage = ({ isOpen, onClose }) => {
     e.preventDefault();
 
     try {
-      const channelId = await AddToDM({ 
-        currentUserId: currentUser._id,
-        targetUserIds
-      }).unwrap();
+      let channel;
+      if (targetUsers.length >= 2) {
+        channel = await GroupDirectMessageCreation({
+          currentUser,
+          targetUsers
+        }).unwrap();
 
-      setTargetUserIds('');
-      navigate(`/channels/@me/${channelId}`);
+      } else {
+        channel = await AppendDirectMessage({
+          currentUserId: currentUser._id,
+          targetUserId: targetUsers[0]._id
+        }).unwrap();
+      }
+
+      setTargetUsers([]);
+      navigate(`/channels/@me/${channel?._id}`);
       
     } catch (err) {
       console.log(err);
@@ -157,7 +167,7 @@ const AddToDirectMessage = ({ isOpen, onClose }) => {
                       </Text>
                     </Flex>
 
-                    <Checkbox id={user?._id} value={user?._id} 
+                    <Checkbox id={user?._id} value={user} 
                       h='22px' w='22px'
                       css={css`
                         span {
@@ -193,7 +203,7 @@ const AddToDirectMessage = ({ isOpen, onClose }) => {
           <Box h='1px' w='auto' m='0 10px' bg='#36383d' boxShadow='0 -1px 0 #33353a' />
 
           <Flex flex='1 1 auto' direction='column' p='20px'>
-            <Button isDisabled={targetUserIds.length === 0}
+            <Button isDisabled={targetUsers.length === 0}
               h='38px' w='100%' minW='96px' p='2px 16px'
               bg='#5865f2' color='#fff'
               border='none' borderRadius='3px'
@@ -236,4 +246,4 @@ const responsiveModal = css`
   }
 `;
 
-export default AddToDirectMessage
+export default CreateDirectMessage

@@ -1,70 +1,88 @@
+import { socket } from '../../socket';
 import { apiSlice } from '../slices/apiSlice';
 
 export const friendApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        getFriendsInfo: builder.query({
+        getFriendRequests: builder.query({
             query: (uid) => ({
-                url: `/friend/infos/${uid}`,
+                url: `/friend/request/get/${uid}`,
                 method: 'GET',
-            })
+            }),
+            providesTags: ['Friend']
         }),
-        FriendRequest: builder.mutation({
+        PostFriendRequest: builder.mutation({
             query: (body) => ({
-                url: '/friend/request/pending',
+                url: '/friend/request/post',
                 method: 'POST',
                 body,
             }), 
-            invalidatesTags: ['User']
+            invalidatesTags: ['Friend'],
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    const result = await cacheDataLoaded;
+
+                    if (result?.data) {
+                        socket.emit('send_request', result.data.targetUserId);
+                    }
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
-        ApprovalPending: builder.mutation({
+        ApprovalFriendRequest: builder.mutation({
             query: (body) => ({
-                url: '/friend/approval/pending',
+                url: '/friend/request/approval',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['User']
+            invalidatesTags: ['Friend', 'User']
         }),
-        DenialPending: builder.mutation({
+        DenialFriendRequest: builder.mutation({
             query: (body) => ({
-                url: '/friend/denial/pending',
+                url: '/friend/request/denial',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['User']
+            invalidatesTags: ['Friend', 'User']
         }),
-        CancelPending: builder.mutation({
+        DeleteFriend: builder.mutation({
             query: (body) => ({
-                url: '/friend/cancel/pending',
-                method: 'POST',
-                body,
-            }),
-            invalidatesTags: ['User']
-        }),
-        AddToDM: builder.mutation({
-            query: (body) => ({
-                url: '/friend/add/dm',
+                url: '/friend/delete',
                 method: 'POST',
                 body
             }),
-            invalidatesTags: ['User']
-        }),
-        RemoveDM: builder.mutation({
-            query: (body) => ({
-                url: '/friend/remove/dm',
-                method: 'POST',
-                body
-            }),
-            invalidatesTags: ['User']
+            invalidatesTags: ['User'],
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    await cacheDataLoaded;
+
+                    if (arg?.targetUser) {
+                        socket.emit('delete_friend', arg?.targetUser);
+                    }
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
     })
 });
 
 export const { 
-    useGetFriendsInfoQuery, 
-    useFriendRequestMutation, 
-    useApprovalPendingMutation, 
-    useDenialPendingMutation, 
-    useCancelPendingMutation, 
-    useAddToDMMutation,
-    useRemoveDMMutation,
+    useGetFriendRequestsQuery, 
+    usePostFriendRequestMutation, 
+    useApprovalFriendRequestMutation,
+    useDenialFriendRequestMutation,
+    useDeleteFriendMutation
 } = friendApi;

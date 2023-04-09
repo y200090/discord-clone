@@ -2,10 +2,13 @@ import { Box, Flex, Heading, IconButton, Modal, ModalContent, Tab, TabList, TabP
 import { css } from '@emotion/react';
 import React from 'react'
 import { SlClose } from 'react-icons/sl'
+import { useSelector } from 'react-redux';
 import { Logout, MyAccount, Profile } from '../features';
+import { selectCurrentUser } from '../redux/slices/authSlice';
 
 const Settings = (props) => {
   const { isOpen, onClose } = props;
+  const currentUser = useSelector(selectCurrentUser);
   const tabTitles = ['マイアカウント', 'プロフィール'];
   
   return (
@@ -108,15 +111,13 @@ const Settings = (props) => {
                   }
                 `}
               >
-                <TabPanels flex='1 1 auto'
-                  minH='100%' maxW='740px' p='60px 40px 80px'
-                >
+                <TabPanels flex='1 1 auto' minH='100%' maxW='740px'>
                   <TabPanel p='0'>
-                    <MyAccount />
+                    <MyAccount currentUser={currentUser} />
                   </TabPanel>
 
-                  <TabPanel p='0'>
-                    <Profile />
+                  <TabPanel p='60px 10px 80px 40px'>
+                    <Profile currentUser={currentUser} />
                   </TabPanel>
                 </TabPanels>
                 

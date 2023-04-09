@@ -11,9 +11,7 @@ import NavIcon from './NavIcon'
 
 const NavBar = () => {
   const currentUser = useSelector(selectCurrentUser);
-  const servers = Object.keys(currentUser).length === 0 
-    ? 0 
-    : currentUser?.joinedServers;
+  const servers = currentUser?.joinedServers;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { isOpen: isOpen, onClose: onClose };
   
@@ -48,12 +46,12 @@ const NavBar = () => {
               flexDirection='column-reverse'
               rowGap='8px'
             >
-              {servers && servers?.map((server) => (
+              {servers?.map((server) => (
                 <NavIcon 
                   key={server?._id}
                   toURL={`/channels/${server?._id}`}
                   indexURL={`${server?.ownedChannels[0]}`}
-                  title={server?.serverName}
+                  title={server?.title}
                   {...(server?.photoURL 
                     ? {photoURL: server?.photoURL} 
                     : {

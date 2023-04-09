@@ -1,13 +1,16 @@
-import { Box, Flex, IconButton, Icon, Text, Tooltip, HStack, useDisclosure } from '@chakra-ui/react'
+import { Box, Flex, IconButton, Icon, Text, Tooltip, HStack, useDisclosure, Popover, PopoverTrigger, PopoverContent, PopoverBody, Button } from '@chakra-ui/react'
 import { css } from '@emotion/react'
 import React, { useEffect, useState } from 'react'
-import { ChevronDownIcon } from '@chakra-ui/icons'
-import { MdAdd, MdKeyboardArrowDown } from 'react-icons/md'
+import { ChevronDownIcon, SettingsIcon } from '@chakra-ui/icons'
+import { MdAdd, MdClose, MdKeyboardArrowDown, MdPersonAddAlt1 } from 'react-icons/md'
 import { Outlet, useNavigate, useParams } from 'react-router-dom'
 import ChannelLink from '../ChannelLink'
 import { useGetServerInfoQuery } from '../../redux/apis/serverApi'
 import CreateChannel from '../../features/CreateChannel'
 import StatusPanel from '../StatusPanel'
+import { RiSettings5Fill } from 'react-icons/ri'
+import { AiFillPlusCircle } from 'react-icons/ai'
+import { IoClose } from 'react-icons/io5'
 
 const Server = () => {
   const { serverId, channelId } = useParams();
@@ -23,7 +26,7 @@ const Server = () => {
   const rest = {
     isOpen: isOpen,
     onClose: onClose,
-    serverId: serverId,
+    server: serverInfo,
   };
 
   useEffect(() => {
@@ -38,26 +41,93 @@ const Server = () => {
     <>
       <Flex direction='column' flex='0 0 auto' w='240px' bg='#2b2d31'>
         <Flex as={'nav'} direction='column' w='100%' flex='1 1 auto'>
-          <Flex flex='0 0 auto'
-            h='48px' w='100%' p='12px 14px 12px 16px'
-            boxShadow='
-              0 1px 0 #1f2023, 
-              0 1.5px 0 #232528, 
-              0 2px 0 #282a2e
-            '
-            zIndex='10' cursor='pointer'
-            _hover={{ bg: '#35373c' }}
-          >
-            <HStack h='24px' w='100%' align='center'>
-              <Text flex='1 1 0%' color='#f3f4f5'
-                fontSize='16px'  lineHeight='20px'  fontWeight='600' 
-                overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
+          <Popover>
+            <PopoverTrigger>
+              <Button flex='0 0 auto'
+                h='48px' w='100%' p='12px 14px 12px 16px' 
+                bg='transparent' borderRadius='0'
+                boxShadow='
+                  0 1px 0 #1f2023, 
+                  0 1.5px 0 #232528, 
+                  0 2px 0 #282a2e
+                '
+                zIndex='10' cursor='pointer'
+                _hover={{ bg: '#35373c' }}
+                css={css`
+                  &[aria-expanded=true] {
+                    background-color: #35373c;
+                    div {
+                      svg:first-of-type {
+                        display: none;
+                      }
+                      svg:last-of-type {
+                        display: block;
+                      }
+                    }
+                  }
+                  &[aria-expanded=false] {
+                    div {
+                      svg:last-of-type {
+                        display: none;
+                      }
+                    }
+                  }
+                `}
               >
-                {serverInfo?.title}
-              </Text>
-              <Icon as={MdKeyboardArrowDown} boxSize='22px' color='#cdced0' />
-            </HStack>
-          </Flex>
+                <HStack h='24px' w='100%' align='center'>
+                  <Text flex='1 1 0%' color='#f3f4f5'
+                    fontSize='16px'  lineHeight='20px'  fontWeight='600' 
+                    overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis' textAlign='start'
+                  >
+                    {serverInfo?.title}
+                  </Text>
+                  <Icon as={MdKeyboardArrowDown} boxSize='22px' color='#cdced0' />
+                  <Icon as={IoClose} boxSize='20px' color='#cdced0' />
+                </HStack>
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent 
+              h='auto' maxH='calc(100vh - 32px)' w='220px' p='6px 8px'
+              bg='#111214' border='none' borderRadius='4px'
+              css={css`
+                &:focus-visible {
+                  outline: none;
+                  box-shadow: none;
+                }
+              `}
+            >
+              <Button justifyContent='space-between'
+                h='auto' minH='32px' p='6px 8px' m='2px 0' 
+                bg='transparent' color='#949cf7' borderRadius='2px'
+                _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
+              >
+                <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
+                  友達を招待
+                </Text>
+                <Icon as={MdPersonAddAlt1} boxSize='18px' ml='8px' />
+              </Button>
+              <Button justifyContent='space-between'
+                h='auto' minH='32px' p='6px 8px' m='2px 0' 
+                bg='transparent' color='#b5bac1' borderRadius='2px'
+                _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
+              >
+                <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
+                  サーバー設定
+                </Text>
+                <SettingsIcon boxSize='18px' p='1px' />
+              </Button>
+              <Button justifyContent='space-between'
+                h='auto' minH='32px' p='6px 8px' m='2px 0' 
+                bg='transparent' color='#b5bac1' borderRadius='2px'
+                _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
+              >
+                <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
+                  チャンネルを作成
+                </Text>
+                <Icon as={AiFillPlusCircle} boxSize='18px' ml='8px' />
+              </Button>
+            </PopoverContent>
+          </Popover>
 
           <Box flex='1 1 auto' w='100%' p='0 0 0 8px' overflow='scroll'
             css={css`
@@ -104,6 +174,7 @@ const Server = () => {
 
                   <Tooltip label='チャンネルを作成'
                     hasArrow placement='top'
+                    p='6px 10px' borderRadius='4px'
                     bg='#111214' color='#e0e1e5'
                   >
                     <IconButton aria-label='create-channel'
@@ -160,8 +231,10 @@ const Server = () => {
                     ボイスチャンネル
                   </Text>
 
-                  <Tooltip label='チャンネルを作成' hasArrow
-                    placement='top' bg='#111214' color='#e0e1e5'
+                  <Tooltip label='チャンネルを作成' 
+                    hasArrow placement='top' 
+                    p='6px 10px' borderRadius='4px'
+                    bg='#111214' color='#e0e1e5'
                   >
                     <IconButton aria-label='チャンネル作成' className='createChannel'
                       icon={<MdAdd size={22} />} size={'22'}
@@ -196,7 +269,7 @@ const Server = () => {
         <StatusPanel />
       </Flex>
 
-      <Flex as={'main'} direction='column' position='relative' overflow='hidden' h='100%' w='100%' bg='#313338'>
+      <Flex direction='column' position='relative' overflow='hidden' h='100%' w='100%' bg='#313338'>
         <Outlet />
       </Flex>
 

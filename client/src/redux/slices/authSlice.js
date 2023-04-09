@@ -3,14 +3,14 @@ import { createSlice, createSelector } from "@reduxjs/toolkit";
 export const authSlice = createSlice({
     name: 'auth', 
     initialState: {
-        currentUser: {},
+        currentUser: null,
     },
     reducers: {
         setCredential: (state, action) => {
             state.currentUser = action.payload;
         },
         logout: (state) => {
-            state.currentUser = {};
+            state.currentUser = null;
         },
     }
 });

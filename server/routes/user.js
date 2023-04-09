@@ -1,5 +1,4 @@
 const router = require('express').Router();
-const mongoose = require('mongoose');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 const verify = require('../middleware/verify');
@@ -17,7 +16,21 @@ router.get('/authenticated', verify, async (req, res) => {
             return res.status(403).json('トークンが見つかりません');
         }
         
-        const user = await User.findOne({ _id: token.userId }).populate([{path: 'joinedServers'}, {path: 'friends.friend'}, {path: 'friends.pending'}, {path: 'friends.waiting'}, {path: 'friends.blocking'}, {path: 'friends.blocked'}, {path: 'friends.dm', populate: {path: 'friends'}}]);
+        const user = await User.findOne({ 
+            _id: token.userId 
+        }).populate([
+            {path: 'friends'}, 
+            {path: 'setDirectMessages', populate: [
+                {path: 'allowedUsers'},
+                {path: 'notifications.recipient'},
+                {path: 'notifications.content'}
+            ]},
+            {path: 'joinedServers', populate: [
+                {path: 'members'},
+                {path: 'ownedChannels'},
+                {path: 'owner'}
+            ]}, 
+        ]);
 
         return res.status(200).json(user);
         
@@ -26,66 +39,24 @@ router.get('/authenticated', verify, async (req, res) => {
     }
 });
 
-router.get('/info/:uid', verify, async (req, res) => {
-    const uid = req.params.uid;
+// ユーザープロフィール編集
+router.post('/edit/profile', verify, async (req, res) => {
+    const { currentUserId, newPhotoURL, newBannerColor, newDescription } = req.body;
 
     try {
-        const user = await User.findOne({ _id: uid });
-        if (!user) {
-            return res.status(200).json('ユーザーが存在しません');
-        }
+        await User.findOneAndUpdate({ _id: currentUserId }, {
+            $set: {
+                photoURL: newPhotoURL,
+                color: newBannerColor,
+                description: newDescription,
+            }
+        }, { runValidators: true });
 
-        return res.status(200).json(user);
+        return res.status(200).json('変更を反映しました');
         
     } catch (err) {
-        return res.status(401).json(err);
+        return res.status(500).json(err);
     }
 });
-
-// router.get('/infos/friends/pendingUser/:uid', verify, async (req, res) => {
-//     const uid = req.params.uid;
-
-//     try {
-//         const pendingUser = await User.find({
-//             'friends.waiting': new mongoose.mongo.ObjectId(uid)
-//         });
-
-//         return res.status(200).json(pendingUser);
-        
-//     } catch (err) {
-//         return res.status(500).json(err);
-//     }
-// });
-
-// router.get('/infos/friends/waitingUser/:uids', verify, async (req, res) => {
-//     const uids = req.params.uids;
-//     if (uids === 'none') {
-//         return res.status(200).json([]);
-//     }
-//     const datas = uids.split(',');
-
-//     try {
-//         const waitingUsers = await User.find({ _id: { $in: datas } });
-
-//         return res.status(200).json(waitingUsers);
-        
-//     } catch (err) {
-//         return res.status(500).json(err);
-//     }
-// });
-
-// router.get('/infos/select/:uids', verify, async (req, res) => {
-//     const uids = req.params.uids;
-    // const datas = uids.split(',');
-
-//     try {
-//         const selectUsers = await User.find({ _id: { $in: datas } });
-
-//         return res.status(200).json(selectUsers);
-        
-//     } catch (err) {
-//         return res.status(500).json(err);
-//     }
-// });
 
 module.exports = router;

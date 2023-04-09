@@ -32,11 +32,11 @@ const MessageBox = ({ message, dateFlag }) => {
               {postDate}
             </Text>
           : <Avatar boxSize='40px'
-              {...(message.sendedBy.photoURL
-                ? {src: message.sendedBy.photoURL}
+              {...(message.sender.photoURL
+                ? {src: message.sender.photoURL}
                 : {
-                    icon: <FaDiscord />,
-                    bg: message.sendedBy.color
+                    icon: <FaDiscord size='26px' />,
+                    bg: message.sender.color
                   }
               )}
             />
@@ -52,7 +52,7 @@ const MessageBox = ({ message, dateFlag }) => {
               cursor='pointer'
               _hover={{ textDecoration: 'underline' }}
             >
-              {message.sendedBy.displayName} 
+              {message.sender.displayName} 
             </Text>
             <Text as={'span'} ml='0.5rem' color='#949ba4'
               fontSize='0.75rem' lineHeight='1.375rem' fontWeight='400'

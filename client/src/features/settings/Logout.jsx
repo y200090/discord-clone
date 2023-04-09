@@ -2,9 +2,10 @@ import { Button, Heading, Icon, Modal, ModalBody, ModalContent, ModalFooter, Mod
 import React from 'react'
 import { RiLoginBoxFill } from 'react-icons/ri'
 import { useLogoutMutation } from '../../redux/apis/authApi';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { logout as logoutUser, selectCurrentUser } from '../../redux/slices/authSlice';
+import { logout as logoutUser } from '../../redux/slices/authSlice';
+import { socket } from '../../socket';
 
 const Logout = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -16,6 +17,7 @@ const Logout = () => {
     try {
       await logout().unwrap();
       dispatch(logoutUser());
+      socket.disconnect();
       navigate('/');
       
     } catch (err) {

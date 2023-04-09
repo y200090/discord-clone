@@ -6,16 +6,14 @@ import { MdAdd } from 'react-icons/md'
 import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 import { selectCurrentUser } from '../../redux/slices/authSlice'
-import AddToDirectMessage from '../../features/AddToDirectMessage'
+import CreateDirectMessage from '../../features/CreateDirectMessage'
 import DirectMessageLink from '../DirectMessageLink'
 import SkeletonBox from '../SkeletonBox'
 import StatusPanel from '../StatusPanel'
 
 const Main = () => {
   const currentUser = useSelector(selectCurrentUser);
-  const DMs = Object.keys(currentUser).length === 0
-    ? []
-    : currentUser?.friends?.dm;
+  const directMessages = currentUser?.setDirectMessages;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { isOpen: isOpen, onClose: onClose };
 
@@ -24,21 +22,17 @@ const Main = () => {
       <Flex w='240px' direction='column' flex='0 0 auto' bg='#2b2d31'>
         <Flex as={'nav'} w='100%' direction='column' flex='1 1 auto'>
           <Flex align='center'
-            h='48px' w='100%' p='0 10px' flex='0 0 auto' 
+            h='48px' w='100%' p='0 10px' flex='0 0 auto' zIndex='10'
             boxShadow='
               0 1px 0 #1f2023, 
               0 1.5px 0 #232528, 
               0 2px 0 #282a2e
             '
-            zIndex='10'
           >
             <Button h='28px' w='100%' p='1px 6px'
               outline='none' border='none' textAlign='left'
-              bg='#1e1f22' color='#989aa2'
-              borderRadius='4px'
-              fontSize='14px'
-              lineHeight='22px'
-              fontWeight='500'
+              bg='#1e1f22' color='#989aa2' borderRadius='4px'
+              fontSize='14px' lineHeight='22px' fontWeight='500'
               whiteSpace='nowrap'
               _hover={{ opacity: '1', bg: '#1e1f22' }}
             >
@@ -72,8 +66,7 @@ const Main = () => {
                 h='100%' w='100%'
                 color='#f3f4f5' bg='transparent'
                 borderRadius='4px'
-                lineHeight='20px'
-                fontWeight='500'
+                lineHeight='20px' fontWeight='500'
                 _hover={{ bg: '#35373c' }}
                 _activeLink={{ 
                   bg: '#404249', 
@@ -84,10 +77,9 @@ const Main = () => {
               </Button>
             </Box>
 
-            <Heading display='flex'
+            <Heading display='flex' color='#949ba4'
               h='40px' padding='18px 8px 4px 10px'
               fontSize='12px' lineHeight='16px' fontWeight='600'
-              color='#949ba4'
               _hover={{ p: { color: '#e0e1e5' } }}
             >
               <Text flex='1 1 0%' cursor='default'>
@@ -112,29 +104,35 @@ const Main = () => {
             </Heading>
 
             <Flex as={'ul'} flexDirection='column'>
-              {DMs?.length
-                ? DMs?.map((dm) => {
-                    const friend = dm.friends.filter((friend) => {
+              {directMessages?.length
+                ? directMessages?.map((dm) => {
+                    const friend = dm.allowedUsers.filter((friend) => {
                       return friend._id !== currentUser?._id;
                     });
 
+                    const notifications = dm.notifications.filter((notification) => {
+                      return notification.recipient._id === currentUser._id;
+                    });
+
                     return (
-                      <DirectMessageLink
-                        key={dm._id} 
+                      <DirectMessageLink key={dm._id} 
                         toURL={dm._id}
-                        {...(friend.length < 2 
-                          ? {photoURL: friend[0].photoURL}
-                          : { group: true }
+                        currentUser={currentUser}
+                        notifications={notifications}
+                        {...(dm.category === 'ダイレクトメッセージ'
+                          ? {
+                            photoURL: friend[0].photoURL,
+                            title: friend[0].displayName,
+                            color: friend[0].color,
+                            status: friend[0].online ? 'オンライン' : 'オフライン'
+                          }
+                          : {
+                            groupDM: true,
+                            title: dm.title,
+                            color: dm.color,
+                            status: `${dm.allowedUsers.length}人のメンバー`
+                          }
                         )}
-                        displayName={friend.length < 2
-                          ? friend[0].displayName
-                          : dm.title
-                        }
-                        color={friend.length < 2
-                          ? friend[0].color
-                          : dm.color
-                        }
-                        {...(friend.length < 2 && {description: friend[0].description})}
                       />
                     )
                   })
@@ -151,7 +149,7 @@ const Main = () => {
         <Outlet />
       </Flex>
 
-      <AddToDirectMessage {...rest} />
+      <CreateDirectMessage {...rest} />
     </>
   )
 }

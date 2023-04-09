@@ -11,7 +11,7 @@ const SendMessage = () => {
   const { channelId } = useParams();
   const currentUser = useSelector(selectCurrentUser);
   const [ PostMessage ] = usePostMessageMutation();
-  const [message, setMessage] = useState('');
+  const [ message, setMessage ] = useState('');
   const textareaRef = useRef();
   const baseHeight = 44;
 
@@ -20,7 +20,7 @@ const SendMessage = () => {
 
     textareaRef.current.style.height = baseHeight + 'px';
     textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-  }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -29,13 +29,7 @@ const SendMessage = () => {
     } 
 
     try {
-      const res = await PostMessage({
-        currentUser,
-        message,
-        channelId
-      });
-      
-      console.log(res);
+      await PostMessage({ currentUser, message, channelId });
       
     } catch (err) {
       console.log(err);
