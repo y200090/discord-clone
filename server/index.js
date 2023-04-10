@@ -33,8 +33,12 @@ app.use('/channel', channelRoute);
 app.use('/friend', friendRoute);
 app.use('/message', messageRoute);
 
-mongoose.connect(process.env.MONGODB_URL).then(() => {
+mongoose.connect(process.env.MONGODB_URL)
+.then(() => {
     console.log('Connected to MongoDB!');
+})
+.catch((err) => {
+    console.log(err);
 });
 
 module.exports = app;

@@ -1,11 +1,14 @@
 import { Box, Container, Flex, Image, Link as ChakraLink } from '@chakra-ui/react'
 import { css } from '@emotion/react';
 import React from 'react'
-import { Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { discordLogo } from '../../assets';
 import LoginAlert from '../LoginAlert';
+import { AnimatePresence, motion } from 'framer-motion';
 
 const MotionForm = ({ redirect, children }) => {
+  const location = useLocation();
+  
   const ResponsiveForm = css`
     width: 100%;
     background-color: #313338;
@@ -25,33 +28,44 @@ const MotionForm = ({ redirect, children }) => {
   
   return (
     <>
-      <Box
-        position='absolute' 
-        left={{sm: '24px', md: '40px'}}
-        h='80px' 
-        display={{base: 'none', sm: 'flex'}}
-        alignItems='center' 
+      <Box position='absolute' left={{sm: '24px', md: '40px'}} h='80px' 
+        display={{base: 'none', sm: 'flex'}} alignItems='center' 
       >
         <ChakraLink as={RouterLink} to='/'>
           <Image src={discordLogo} h='34px' w='124px' />
         </ChakraLink>
       </Box>
-    
+
       <Box bg='#5865f2'>
         <Container h='100vh' w='100%' maxW='480px' p='0'>
           <Flex h='100%' w='100%' align='center' justify='center'>
-            <div css={ResponsiveForm}>
-              {redirect
-                ? (
-                  <LoginAlert />
-                )
-                : (
-                  <>
-                    { children }
-                  </>
-                )
-              }
-            </div>
+            <AnimatePresence mode='wait' onExitComplete={() => console.log('それが')}>
+              <Box as={motion.div} key={location.pathname} css={ResponsiveForm}
+                initial={{ opacity: 0, scale: 1, y: -40 }}
+                animate={{ opacity: 1, y: 0, transition: {
+                  y: {
+                    type: 'spring', 
+                    stiffness: 300,
+                    damping: 20
+                  },
+                  duration: 0.2,
+                } }} 
+                exit={{ opacity: 0, scale: 1.3, transition: {
+                  duration: 5
+                } }}
+              >
+                {redirect
+                  ? (
+                    <LoginAlert />
+                  )
+                  : (
+                    <>
+                      { children }
+                    </>
+                  )
+                }
+              </Box>
+            </AnimatePresence>
           </Flex>
         </Container>
       </Box>

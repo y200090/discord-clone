@@ -3,13 +3,13 @@ import React, { useEffect } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { Loading, NavBar } from '../components'
 import { useDispatch, useSelector } from 'react-redux'
-import { selectCurrentUser, setCredential } from '../redux/slices/authSlice'
+import { selectCurrentUser } from '../redux/slices/authSlice'
 import { useGetCurrentUserQuery } from '../redux/apis/userApi'
 import { socket } from '../socket'
 
 const User = () => {
   const location = useLocation();
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
   const {
     data,
     isLoading,
@@ -37,22 +37,22 @@ const User = () => {
     }
   }, [socket]);
 
-  useEffect(() => {
-    socket.on('update_user', (message) => {
-      console.log(message);
-      refetch();
-    });
+  // useEffect(() => {
+  //   socket.on('update_user', (message) => {
+  //     console.log(message);
+  //     refetch();
+  //   });
 
-    socket.on('notify', (message) => {
-      console.log(message);
-      refetch();
-    });
+  //   socket.on('notify', (message) => {
+  //     console.log(message);
+  //     refetch();
+  //   });
     
-    return () => {
-      socket.off('update_user');
-      socket.off('notify');
-    }
-  }, [socket]);
+  //   return () => {
+  //     socket.off('update_user');
+  //     socket.off('notify');
+  //   }
+  // }, [socket]);
 
   if (isLoading) {
     return <Loading />
