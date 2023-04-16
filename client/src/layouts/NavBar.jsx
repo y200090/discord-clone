@@ -6,14 +6,18 @@ import { FaDiscord } from 'react-icons/fa'
 import { IoMdCompass } from 'react-icons/io'
 import { useSelector } from 'react-redux'
 import { CreateServer } from '../features'
-import { selectCurrentUser } from '../redux/slices/authSlice'
-import NavIcon from './NavIcon'
+import { selectCurrentUser } from '../redux/slices/userSlice'
+import NavIcon from '../components/NavIcon'
 
 const NavBar = () => {
   const currentUser = useSelector(selectCurrentUser);
   const servers = currentUser?.joinedServers;
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const rest = { isOpen: isOpen, onClose: onClose };
+  const rest = { 
+    isOpen: isOpen, 
+    onClose: onClose, 
+    currentUser: currentUser 
+  };
   
   return (
     <>
@@ -50,7 +54,7 @@ const NavBar = () => {
                 <NavIcon 
                   key={server?._id}
                   toURL={`/channels/${server?._id}`}
-                  indexURL={`${server?.ownedChannels[0]}`}
+                  indexURL={`${server?.ownedChannels[0]._id}`}
                   title={server?.title}
                   {...(server?.photoURL 
                     ? {photoURL: server?.photoURL} 

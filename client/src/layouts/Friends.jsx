@@ -6,22 +6,25 @@ import { useSelector } from 'react-redux'
 import { Navigate, useLocation } from 'react-router-dom'
 import { AddToFriend, Blocking, Online, Pending, ShowAll } from '../features'
 import { useGetFriendRequestsQuery } from '../redux/apis/friendApi'
-import { selectCurrentUser } from '../redux/slices/authSlice'
+import { selectCurrentUser } from '../redux/slices/userSlice'
 import { socket } from '../socket'
+import { selectCredential } from '../redux/slices/authSlice'
 
 const Friends = () => {
   const currentUser = useSelector(selectCurrentUser);
+  const credential = useSelector(selectCredential);
+  console.log(currentUser)
   const { 
     data: friendRequests,
     isError,
     refetch
-  } = useGetFriendRequestsQuery(currentUser._id);
+  } = useGetFriendRequestsQuery(credential);
   const location = useLocation();
   const friendItems = ['オンライン', '全て表示', '保留中', 'ブロック中', 'フレンドに追加'];
   
   useEffect(() => {
     socket.on('update_request', (message) => {
-      console.log(message);
+      console.log('==========\n', message, '\n==========');
       refetch();
     });
 
@@ -33,7 +36,7 @@ const Friends = () => {
   if (isError) {
     return (
       <Navigate to='/login' state={{ referrer: location.pathname }} replace />
-    )
+    );
   }
   
   return (

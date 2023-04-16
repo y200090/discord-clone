@@ -8,9 +8,10 @@ import { useDispatch } from 'react-redux';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { discordLogo } from '../assets';
 import { strongPassword, mediumPassword } from '../assets/regexp';
-import MotionForm from '../components/layouts/MotionForm';
 import { useRegisterMutation } from '../redux/apis/authApi';
 import { setCredential } from '../redux/slices/authSlice';
+import { setCurrentUser } from '../redux/slices/userSlice';
+import { MotionForm } from '../layouts';
 
 const Register = () => {
   const [ isRevealPassword, setIsRevealPassword ] = useState(false);
@@ -38,8 +39,9 @@ const Register = () => {
 
   const onSubmit = async (data) => {
     try {
-      const currentUser = await register({...data}).unwrap();
-      dispatch(setCredential({...currentUser}));
+      const result = await register({...data}).unwrap();
+      dispatch(setCredential(result.accessToken));
+      dispatch(setCurrentUser(result.user));
       reset();
       navigate('/channels/@me');
       

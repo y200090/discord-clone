@@ -2,9 +2,9 @@ import { Box, Container, Flex, Image, Link as ChakraLink } from '@chakra-ui/reac
 import { css } from '@emotion/react';
 import React from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { discordLogo } from '../../assets';
-import LoginAlert from '../LoginAlert';
+import { discordLogo } from '../assets';
 import { AnimatePresence, motion } from 'framer-motion';
+import { LoginAlert } from '../components';
 
 const MotionForm = ({ redirect, children }) => {
   const location = useLocation();

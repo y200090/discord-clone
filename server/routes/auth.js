@@ -3,21 +3,27 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const RefreshToken = require('../models/RefreshToken');
 const jwt = require('jsonwebtoken');
+const verify = require('../middleware/verify');
 
-const generateAccessToken = (user) => {
+const generateAccessToken = (userId) => {
     return jwt.sign(
-        { userId: user._id }, 
+        { userId }, 
         process.env.ACCESS_TOKEN_SECRET_KEY, 
         { expiresIn: '1m' },
     );
 };
 
-const generateRefreshToken = (user) => {
+const generateRefreshToken = (userId) => {
     return jwt.sign(
-        { userId: user._id }, 
+        { userId }, 
         process.env.REFRESH_TOKEN_SECRET_KEY, 
-        { expiresIn: '5m' },
+        { expiresIn: '3m' },
     );
+};
+
+const loggedInOptions = {
+    httpOnly: false,
+    expires: new Date(Date.now() + 3600000 * 0.5),
 };
 
 router.post('/register', async (req, res) => {
@@ -49,8 +55,8 @@ router.post('/register', async (req, res) => {
             color: colorCode,
         });
 
-        const accessToken = generateAccessToken(user);
-        const refreshToken = generateRefreshToken(user);
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
 
         await RefreshToken.create({
             userId: user._id, 
@@ -63,8 +69,9 @@ router.post('/register', async (req, res) => {
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true, 
         });
+        res.cookie('logged_in', true, loggedInOptions);
 
-        return res.status(200).json(user);
+        return res.status(200).json({ user, accessToken });
         
     } catch (err) {
         return res.status(500).json(err);
@@ -86,8 +93,8 @@ router.post('/login', async (req, res) => {
         }
 
         if (user && validatePassword) {
-            const accessToken = generateAccessToken(user);
-            const refreshToken = generateRefreshToken(user);
+            const accessToken = generateAccessToken(user._id);
+            const refreshToken = generateRefreshToken(user._id);
 
             const token = await RefreshToken.findOne({ userId: user._id });
             if (!token) {
@@ -101,15 +108,19 @@ router.post('/login', async (req, res) => {
                 await token.save();
             }
             
-
             res.cookie('access_token', accessToken, {
                 httpOnly: true, 
             });
             res.cookie('refresh_token', refreshToken, {
                 httpOnly: true, 
             });
+            res.cookie('logged_in', true, {
+                httpOnly: false,
+                // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+                expires: new Date(Date.now() + 60000), // 1分
+            });
 
-            return res.status(200).json(user);
+            return res.status(200).json({ user, accessToken });
         }
         
     } catch (err) {
@@ -128,6 +139,7 @@ router.post('/logout', async (req, res) => {
         
         res.clearCookie('access_token');
         res.clearCookie('refresh_token');
+        res.clearCookie('logged_in');
 
         return res.status(200).json('ログアウトしました');
         
@@ -136,7 +148,15 @@ router.post('/logout', async (req, res) => {
     }
 });
 
-router.post('/refreshtoken', async (req, res) => {
+router.get('/confirm/token', verify, async (req, res) => {
+    const accessToken = req.cookies.access_token;
+    if (!accessToken) {
+        return res.status(400).json('アクセストークンが有効ではありません');
+    }
+    return res.status(200).json(accessToken);
+});
+
+router.post('/refresh/token', async (req, res) => {
     const refreshToken = req.cookies.refresh_token;
     if (!refreshToken) {
         return res.status(401).json('更新トークンがありません');
@@ -145,7 +165,7 @@ router.post('/refreshtoken', async (req, res) => {
     try {
         const token = await RefreshToken.findOne({ refreshToken });
         if (!token) {
-            return res.status(401).json('トークン情報が見つかりません');
+            return res.status(401).json('トークン情報が見あたりません');
         }
 
         jwt.verify(
@@ -156,8 +176,8 @@ router.post('/refreshtoken', async (req, res) => {
                     return res.status(403).json('有効でないトークンです');
                 }
 
-                const newAccessToken = generateAccessToken(decoded);
-                const newRefreshToken = generateRefreshToken(decoded);
+                const newAccessToken = generateAccessToken(decoded.userId);
+                const newRefreshToken = generateRefreshToken(decoded.userId);
 
                 token.refreshToken = newRefreshToken;
                 await token.save();
@@ -168,8 +188,11 @@ router.post('/refreshtoken', async (req, res) => {
                 res.cookie('refresh_token', newRefreshToken, {
                     httpOnly: true, 
                 });
+                res.cookie('logged_in', true, loggedInOptions);
 
-                return res.status(200).json('トークンを更新しました');
+                return res.status(200).json({ 
+                    accessToken: newAccessToken 
+                });
             }
         );
         

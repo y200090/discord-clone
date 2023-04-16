@@ -6,12 +6,12 @@ import { NoOnline } from '../../assets';
 import FriendCard from '../../components/FriendCard';
 
 const Online = ({ currentUser }) => {
-  const onlines = currentUser?.friends.filter((friend) => {
+  const onlines = currentUser?.friends?.filter((friend) => {
     return friend.online;
   });
   const [ userTag, setUserTag ] = useState('');
 
-  if (!onlines.length) {
+  if (!onlines?.length) {
     return (
       <>
         <Flex m='auto' direction='column' cursor='default'>

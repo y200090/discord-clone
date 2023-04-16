@@ -1,24 +1,14 @@
 const router = require('express').Router();
 const User = require('../models/User');
-const RefreshToken = require('../models/RefreshToken');
 const verify = require('../middleware/verify');
 
-// カレントユーザー認証
-router.get('/authenticated', verify, async (req, res) => {
-    const refreshToken = req.cookies.refresh_token;
-    if (!refreshToken) {
-        return res.status(204).json('更新トークンがありません');
-    }
+router.get('/get/info/:userId', verify, async (req, res) => {
+    const userId = req.params.userId;
 
-    try {
-        const token = await RefreshToken.findOne({ refreshToken });
-        if (!token) {
-            return res.status(403).json('トークンが見つかりません');
-        }
-        
-        const user = await User.findOne({ 
-            _id: token.userId 
-        }).populate([
+    try{
+        const user = await User.findById(userId)
+        .select('-password')
+        .populate([
             {path: 'friends'}, 
             {path: 'setDirectMessages', populate: [
                 {path: 'allowedUsers'},
@@ -27,19 +17,24 @@ router.get('/authenticated', verify, async (req, res) => {
             ]},
             {path: 'joinedServers', populate: [
                 {path: 'members'},
-                {path: 'ownedChannels'},
+                {path: 'ownedChannels', populate: [
+                    {path: 'parentServer', populate: [
+                        {path: 'members'},
+                        {path: 'owner'},
+                    ]},
+                    {path: 'allowedUsers'},
+                ]},
                 {path: 'owner'}
             ]}, 
         ]);
 
         return res.status(200).json(user);
-        
-    } catch (err) {
-        return res.status(401).json(err);
-    }
-});
 
-// ユーザープロフィール編集
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+})
+
 router.post('/edit/profile', verify, async (req, res) => {
     const { currentUserId, newPhotoURL, newBannerColor, newDescription } = req.body;
 
@@ -50,7 +45,9 @@ router.post('/edit/profile', verify, async (req, res) => {
                 color: newBannerColor,
                 description: newDescription,
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true, 
+        });
 
         return res.status(200).json('変更を反映しました');
         

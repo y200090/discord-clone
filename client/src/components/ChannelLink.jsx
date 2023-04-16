@@ -1,15 +1,23 @@
-import { Text, Icon, Box, Tooltip, IconButton, Link as ChakraLink, ButtonGroup } from '@chakra-ui/react'
+import { Text, Icon, Box, Tooltip, IconButton, Link as ChakraLink, ButtonGroup, useDisclosure } from '@chakra-ui/react'
 import React from 'react'
-import { BsPersonPlusFill } from 'react-icons/bs'
-import { RiSettings5Fill } from 'react-icons/ri'
 import { BiHash } from 'react-icons/bi'
 import { NavLink } from 'react-router-dom'
 import { HiSpeakerWave } from 'react-icons/hi2'
 import { MdPersonAddAlt1 } from 'react-icons/md'
 import { SettingsIcon } from '@chakra-ui/icons'
+import { CreateInvitation } from '../features'
 
 const ChannelLink = (props) => {
-  const { toURL, channelName, category, isOpen } = props;
+  const { toURL, channelName, category, isAccordionOpen, server } = props;
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  const rest = {
+    isOpen: isOpen,
+    onClose: onClose,
+    channelName: channelName,
+    category: category,
+    server: server,
+  };
   
   return (
     <>
@@ -19,7 +27,7 @@ const ChannelLink = (props) => {
           display='flex' alignItems='center'
           borderRadius='4px' color='#82858f'
           tabIndex='-1' zIndex='5'
-          {...(!isOpen && {display: 'none'})}
+          {...(!isAccordionOpen && {display: 'none'})}
           _hover={{
             bg: '#35373c',
             p: {
@@ -62,7 +70,12 @@ const ChannelLink = (props) => {
               <IconButton aria-label='招待を作成'
                 icon={<MdPersonAddAlt1 size={16} />} size={16}
                 bg='transparent' color='#b8b9bf' mr='-4px'
+                zIndex={10}
                 _hover={{ bg: 'transparent', color: '#dcdde1' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  onOpen();
+                }}
               />
             </Tooltip>
             <Tooltip label='チャンネルの編集'
@@ -79,6 +92,8 @@ const ChannelLink = (props) => {
           </ButtonGroup>
         </ChakraLink>
       </Box>
+
+      <CreateInvitation {...rest} />
     </>
   )
 }

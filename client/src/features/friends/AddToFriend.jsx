@@ -5,7 +5,6 @@ import { IoMdCompass } from 'react-icons/io';
 import { MdOutlineArrowForwardIos } from 'react-icons/md';
 import { Link as RouterLink } from 'react-router-dom';
 import { usePostFriendRequestMutation } from '../../redux/apis/friendApi';
-import { socket } from '../../socket';
 
 const AddToFriend = ({ currentUser }) => {
   const [ PostFriendRequest, 
@@ -25,8 +24,6 @@ const AddToFriend = ({ currentUser }) => {
     try {
       await PostFriendRequest({ currentUser, targetTag });
 
-      // socket.emit('send_request', targetTag);
-
     } catch (err) {
       console.log(err);
 
@@ -40,20 +37,14 @@ const AddToFriend = ({ currentUser }) => {
       <Flex direction='column' flex='1 1 auto' 
         h='100%' w='100%' minW='0px'
       >
-        <Box flexShrink='0' p='20px 30px' 
-          borderBottom='1px solid #3f4147'
-        >
-          <Heading color='#f3f4f5' mb='8px'
-            fontSize='16px' lineHeight='20px'
-          >
+        <Box flexShrink='0' p='20px 30px' borderBottom='1px solid #3f4147'>
+          <Heading color='#f3f4f5' mb='8px' fontSize='16px' lineHeight='20px'>
             フレンドに追加
           </Heading>
 
           <form onSubmit={handleRequest}>
             <Text color='#b8b9bf' maxW='800px'
-              fontSize='14px'
-              lineHeight='20px'
-              fontWeight='400'
+              fontSize='14px' lineHeight='20px' fontWeight='400'
             >
               フレンドになりたいユーザーにフレンド申請を送ることができます。ユーザーIDを間違えないでくださいね！
             </Text>
@@ -70,13 +61,12 @@ const AddToFriend = ({ currentUser }) => {
               borderColor={isSuccess ? '#23a559' : isError && '#f23f42'}
             >
               <Box flex='1 1 auto' mr='16px'>
-                <Input type='text' id='userTag' size='lg' value={targetTag}
-                  minW='0px' p='4px 0' color='#f3f4f5'
+                <Input type='text' id='userTag' value={targetTag}
+                  size='lg' minW='0px' p='4px 0' color='#f3f4f5'
                   border='none' outline='none'
                   focusBorderColor='transparent'
-                  fontSize='16px'
-                  lineHeight='20px'
-                  fontWeight='500'
+                  fontSize='16px' lineHeight='20px' fontWeight='500'
+                  autoComplete='off'
                   onChange={(e) => setTargetTag(e.target.value)}
                   placeholder='ユーザーIDを入力してください'
                   css={css`
@@ -90,9 +80,7 @@ const AddToFriend = ({ currentUser }) => {
                 isLoading={isLoading}
                 h='32px' w='auto' minW='60px' p='2px 16px'
                 color='#f6f7fe' bg='#5865f2' borderRadius='3px'
-                fontSize='14px'
-                lineHeight='16px'
-                fontWeight='500'
+                fontSize='14px' lineHeight='16px' fontWeight='500'
                 _hover={{ bg: '#5865f2', opacity: '0.7' }}
                 _disabled={{ opacity: '0.5', cursor: 'not-allowed' }}
                 onClick={handleRequest}
@@ -119,7 +107,7 @@ const AddToFriend = ({ currentUser }) => {
         </Box>
 
         <Box flexShrink='0' p='20px 30px'>
-          <Heading fontSize='16px'  lineHeight='20px' color='#f3f4f5'>
+          <Heading fontSize='16px' lineHeight='20px' color='#f3f4f5'>
             他の場所でフレンドを探す
           </Heading>
         </Box>

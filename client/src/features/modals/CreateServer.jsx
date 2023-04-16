@@ -1,27 +1,40 @@
-import { Box, Button, Heading, Image, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Text, VStack, Icon, Flex, Input, FormControl, FormLabel, Link as ChakraLink, ModalOverlay } from '@chakra-ui/react'
-import { AddIcon } from '@chakra-ui/icons'
+import { Box, Button, Heading, Image, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Text, VStack, Icon, Flex, Input, FormControl, FormLabel, Link as ChakraLink, ModalOverlay, FormErrorMessage } from '@chakra-ui/react'
+import { AddIcon, ChevronRightIcon } from '@chakra-ui/icons'
 import { css } from '@emotion/react';
 import styled from '@emotion/styled';
 import React, { useEffect, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { discordIcon, categories } from '../assets'
+import { discordIcon, categories } from '../../assets'
 import { MdOutlineArrowForwardIos } from 'react-icons/md'
-import { IoMdCamera } from 'react-icons/io'
-import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../redux/slices/authSlice';
-import { useServerCreationMutation } from '../redux/apis/serverApi';
+import { IoMdCamera, IoMdCompass } from 'react-icons/io'
+import { useServerCreationMutation } from '../../redux/apis/serverApi';
+import { useForm } from 'react-hook-form';
+import { BiChevronRight } from 'react-icons/bi';
 
-const CreateServer = ({ isOpen, onClose }) => {
-  const currentUser = useSelector(selectCurrentUser);
+const CreateServer = ({ isOpen, onClose, currentUser }) => {
   const [ ServerCreation, { isLoading } ] = useServerCreationMutation();
   const navigate = useNavigate();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: {
+      errors,
+      isSubmitting,
+    }
+  } = useForm();
   const [ progress, setProgress ] = useState(0);
   const [ category, setCategory ] = useState('');
   const [ serverName, setServerName ] = useState('');
   const [ photoURL, setPhotoURL ] = useState('');
+  const sampleItems = [
+    'hTKzmak',
+    'https://api.discord-clone/hTKzmak',
+    'https://api.discord-clone/as9d8fn',
+  ];
 
   useEffect(() => {
-    setServerName(`${currentUser.displayName}のサーバー`);
+    setServerName(`${currentUser?.displayName}のサーバー`);
   }, [currentUser, category]);
 
   const handleUpload = (e) => {
@@ -41,12 +54,16 @@ const CreateServer = ({ isOpen, onClose }) => {
       const newServer = await ServerCreation({ serverName, photoURL, category, currentUser }).unwrap();
       console.log(newServer);
       onClose();
-      setProgress(0)
+      setProgress(0);
       navigate(`/channels/${newServer._id}/${newServer.ownedChannels[0]}`);
       
     } catch (err) {
       console.log(err?.data);
     }
+  };
+
+  const onSubmit = async (data) => {
+    console.log(data.invitationLink);
   };
   
   return (
@@ -121,8 +138,11 @@ const CreateServer = ({ isOpen, onClose }) => {
                 <Heading fontSize='20px' lineHeight='24px' fontWeight='600'>
                   もう招待されていますか？
                 </Heading>
-                <Button w='100%' bg='#6d6f78' color='#fdfdfd' fontSize='14px' lineHeight='16px' fontWeight='500' borderRadius='3px'
+                <Button w='100%' bg='#6d6f78' color='#fdfdfd' 
+                  fontSize='14px' lineHeight='16px' fontWeight='500' 
+                  borderRadius='3px'
                   _hover={{ backgroundColor: '#4e5058' }}
+                  onClick={() => setProgress((prevState) => prevState - 1)}
                 >
                   サーバーに参加
                 </Button>
@@ -168,7 +188,13 @@ const CreateServer = ({ isOpen, onClose }) => {
                   <FormLabel htmlFor='serverName' color='#4e5058' fontSize='12px' lineHeight='16px' fontWeight='700' mb='8px'>
                     サーバー名
                   </FormLabel>
-                  <Input type='text' id='serverName' value={serverName} h='40px' w='100%' bg='#e3e5e8' p='10px' borderRadius='3px' fontWeight='400' border='none' focusBorderColor='transparent' onChange={(e) => setServerName(e.target.value)} />
+                  <Input type='text' id='serverName' 
+                    value={serverName} 
+                    h='40px' w='100%' bg='#e3e5e8' p='10px' 
+                    borderRadius='3px' fontWeight='400' border='none' 
+                    focusBorderColor='transparent' 
+                    onChange={(e) => setServerName(e.target.value)} 
+                  />
                 </FormControl>
 
                 <Box mt='8px' pb='4px'>
@@ -184,7 +210,9 @@ const CreateServer = ({ isOpen, onClose }) => {
             </ModalBody>
 
             <ModalFooter display='flex' p='16px' bg='#f3f4f5' borderRadius='0 0 4px 4px' alignItems='center' justifyContent='space-between'>
-              <Button h='auto' w='auto' p='2px 4px' bg='transparent' color='currentcolor' fontSize='14px' fontWeight='500' lineHeight='16px'
+              <Button h='auto' w='auto' p='2px 4px' 
+                bg='transparent' color='currentcolor' 
+                fontSize='14px' fontWeight='500' lineHeight='16px'
                 _hover={{ bg: 'transparent' }}
                 onClick={() => {
                   setPhotoURL('');
@@ -194,8 +222,146 @@ const CreateServer = ({ isOpen, onClose }) => {
                 戻る
               </Button>
 
-              <Button type='submit' form='createServer' h='38px' w='96px' p='2px 16px' bg='#5865f2' color='#edeffe' borderRadius='3px' fontSize='14px' fontWeight='500' lineHeight='16px' isLoading={isLoading} _hover={{ bg: '#4752c4' }}>
+              <Button type='submit' form='createServer' 
+              h='38px' w='96px' p='2px 16px' 
+              bg='#5865f2' color='#edeffe' borderRadius='3px' fontSize='14px' fontWeight='500' lineHeight='16px' 
+              isLoading={isLoading} 
+              _hover={{ bg: '#4752c4' }}>
                 新規作成
+              </Button>
+            </ModalFooter>
+          </Box>
+
+          <Box display={progress !== -1 && 'none'}>
+            <ModalHeader p='16px' cursor='default'>
+              <Heading as={'h1'} m='24px 0 8px' 
+                color='#060607' textAlign='center'
+                fontSize='24px' lineHeight='30px' fontWeight='700'
+              >
+                サーバーに参加
+              </Heading>
+              <Text
+                fontSize='14px' fontWeight='400' lineHeight='18px'
+              >
+                既存のサーバーに加入するには、以下の招待を入力してください
+              </Text>
+            </ModalHeader>
+
+            <ModalCloseButton size='lg' mr='-4px' color='#a7a8ac'
+              _hover={{ bg: 'transparent', color: 'unset' }}
+            />
+
+            <ModalBody p='0 16px'>
+              <form onSubmit={handleSubmit(onSubmit)} id='joinServer'>
+                <FormControl mb='16px' isInvalid={errors.invitationLink}>
+                  <Text color={errors.invitationLink ? '#dd484d' : '#4e5058'}
+                    mb='8px' cursor='default'
+                    fontSize='12px' lineHeight='16px' fontWeight='700'
+                  >
+                    招待リンク
+                    <WarningStar>
+                      {errors.invitationLink
+                        ? (
+                          <FormErrorMessage as={'span'} 
+                            display='inline-block' m='0'
+                            fontSize='12px' fontWeight='500'
+                          >
+                            - {errors.invitationLink.message}
+                          </FormErrorMessage>
+                        )
+                        : '*'
+                      }
+                    </WarningStar>
+                  </Text>
+                  <Input type='text' id='invitationLink'
+                    h='40px' p='10px' w='100%'
+                    borderRadius='4px' bg='#e3e5e8'
+                    borderColor='transparent'
+                    focusBorderColor='transparent'
+                    errorBorderColor='transparent'
+                    fontSize='16px' fontWeight='500' color='#4d4f54'
+                    placeholder='https://api.discord-clone/qw0n398y0f'
+                    css={css`
+                      &::placeholder {
+                        color: #4d4f54;
+                      }
+                    `}
+                    {...register('invitationLink', {
+                      required: '有効な招待リンクもしくは招待コードを入力してください。',
+                    })}
+                  />
+                </FormControl>
+              </form>
+              <Box mb='16px' cursor='default'>
+                <Text color='#4e5058' mb='8px'
+                  fontSize='12px' lineHeight='16px' fontWeight='700'
+                >
+                  招待はこのような形です
+                </Text>
+                {sampleItems.map((item) => (
+                  <Box key={item}
+                    fontSize='14px' lineHeight='18px' color='#6b6b6b'
+                  >
+                    {item}
+                  </Box>
+                ))}
+              </Box>
+              <ChakraLink as={RouterLink} to='/guild-discovery'
+                _hover={{ textDecoration: 'none' }}
+              >
+                <Flex 
+                  align='center' bg='#f2f3f5'
+                  p='12px' mb='16px' borderRadius='8px'
+                  _hover={{ bg: '#eaebed' }}
+                >
+                  <Icon as={IoMdCompass} boxSize='40px'
+                    mr='12px' p='8px' borderRadius='100%'
+                    bg='#3ba55c' color='#fff'
+                  />
+                  <Box>
+                    <Heading color='#060607'
+                      fontSize='16px' fontWeight='600' lineHeight='20px'
+                      overflow='hidden' textOverflow='ellipsis'
+                    >
+                      招待をお持ちでない場合
+                    </Heading>
+                    <Text color='#313338'
+                      overflow='hidden' textOverflow='ellipsis'
+                      fontSize='12px' lineHeight='16px' fontWeight='400'
+                    >
+                      サーバー発見の公開コミュニティをチェックしましょう。
+                    </Text>
+                  </Box>
+                  <Icon as={BiChevronRight} boxSize='30px' 
+                    m='0 6px 0 auto' color='#4f5660'
+                    transform='translateX(-6px)'
+                  />
+                </Flex>
+              </ChakraLink>
+            </ModalBody>
+
+            <ModalFooter display='flex' 
+              alignItems='center' justifyContent='space-between'
+              p='16px' boxShadow='inset 0 1px 0 #f6f6f7'
+              bg='#f2f3f5' borderRadius='0 0 4px 4px'
+            >
+              <Button
+                h='auto' w='auto' p='2px 4px'
+                bg='transparent'
+                fontSize='14px' lineHeight='16px' fontWeight='500'
+                _hover={{ textDecoration: 'underline' }}
+                onClick={() => setProgress((prevState) => prevState + 1)}
+              >
+                戻る
+              </Button>
+              <Button type='submit' form='joinServer'
+                h='38px' minH='38px' w='auto' minW='96px'
+                bg='#5865f2' color='#fff' borderRadius='3px'
+                fontSize='14px' lineHeight='16px' fontWeight='500'
+                _hover={{ bg: '#4752c4' }}
+                isLoading={isSubmitting}
+              >
+                サーバーに参加する
               </Button>
             </ModalFooter>
           </Box>
@@ -217,6 +383,11 @@ const PhotoUploadCircle = styled.label`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+`;
+
+const WarningStar = styled.span`
+  color: #dd484d;
+  margin-left: 4px;
 `;
 
 export default CreateServer

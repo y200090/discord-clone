@@ -1,41 +1,44 @@
-import { Avatar, Box, Flex, IconButton, Input, Icon, Text, Tooltip, Heading, Button } from '@chakra-ui/react'
+import { Box, Flex, IconButton, Input, Icon, Text, Tooltip, Heading } from '@chakra-ui/react'
 import { css } from '@emotion/react'
 import React, { useEffect, useRef, useState } from 'react'
 import { BiHash } from 'react-icons/bi'
 import { MdPeopleAlt } from 'react-icons/md'
 import { GiHamburgerMenu } from 'react-icons/gi'
-import SendMessage from './SendMessage'
 import { Navigate, useLocation, useParams } from 'react-router-dom'
-import { useGetChannelInfoQuery } from '../redux/apis/channelApi'
 import { AtSignIcon } from '@chakra-ui/icons'
 import { useGetMessagesQuery } from '../redux/apis/messageApi'
-import MessageBox from './MessageBox'
-import { FaCrown, FaDiscord } from 'react-icons/fa'
 import { socket } from '../socket'
 import { useSelector } from 'react-redux'
-import { selectCurrentUser } from '../redux/slices/authSlice'
+import { selectCurrentUser } from '../redux/slices/userSlice'
+import { MessageBox } from '../components'
+import { ActiveSideBar, SendMessage } from '../features'
 
 const Chat = () => {
   const { serverId, channelId } = useParams();
   const currentUser = useSelector(selectCurrentUser);
-  // const { data: channelInfo } = useGetChannelInfoQuery(channelId);
+  console.log('カレントユーザー：', currentUser)
 
   let channel;
   if (serverId) {
     const server = currentUser?.joinedServers?.filter((joinedServer) => {
       return joinedServer._id == serverId;
     });
-
-    channel = server.ownedChannels.filter((ownedChannel) => {
-      return ownedChannel._id == channelId;
-    });
+    console.log('サーバー情報：', server);
+    if (!server) channel = [];
+    else if (server?.length) { 
+      channel = server[0]?.ownedChannels?.filter((ownedChannel) => {
+        return ownedChannel._id == channelId;
+      });
+      if (channel?.length) channel = channel[0];
+    }
 
   } else {
-    channel = currentUser?.setDirectMessages?.filter((setDirectMessage) => {
-      return setDirectMessage._id == channelId;
+    channel = currentUser?.setDirectMessages?.filter((directMessage) => {
+      return directMessage._id == channelId;
     });
+    if (channel?.length) channel = channel[0];
   }
-  console.log('チャンネル情報：', channel[0]);
+  console.log('チャンネル情報：', channel);
 
   const { 
     data: messages,
@@ -43,22 +46,23 @@ const Chat = () => {
     error,
     refetch
   } = useGetMessagesQuery(channelId);
-  const messageRef = useRef();
   const location = useLocation();
+  const messageRef = useRef();
   const [ isOpen, setIsOpen ] = useState('');
 
   useEffect(() => {
-    socket.emit('join_room', {channelId, currentUser});
-    // refetch();
+    if (currentUser) {
+      socket.emit('join_room', channelId);
+    }
     
     return () => {
-      socket.emit('leave_room', {channelId, currentUser});
+      socket.emit('leave_room', channelId);
     }
-  }, [channelId]);
+  }, [channelId, currentUser]);
 
   useEffect(() => {
     socket.on('sended_message', (newMessage) => {
-      console.log(newMessage);
+      console.log('==========\n', newMessage, '\n==========');
       refetch();
     });
 
@@ -69,14 +73,17 @@ const Chat = () => {
 
   useEffect(() => {
     if (messages) {
-      const unreadMessages = messages.filter((message) => {
-        let readUserIds = message.readUsers.map((user) => {
-          return user._id
+      const unreadMessages = messages?.filter((message) => {
+        let readUserIds = message?.readUsers?.map((user) => {
+          return user._id;
         });
-        return !readUserIds.includes(currentUser._id)
+        return !readUserIds.includes(currentUser?._id);
       });
-      if (unreadMessages.length) {
-        socket.emit('read_messages', {channelId, currentUserId: currentUser._id});
+      if (unreadMessages?.length) {
+        socket.emit('read_messages', {
+          channelId, 
+          currentUserId: currentUser?._id
+        });
       }
     }
   }, [messages]);
@@ -85,11 +92,32 @@ const Chat = () => {
     messageRef.current?.scrollIntoView(false);
   }, [messages]);
 
+  const calculateTime = (index, array) => {
+    const prevState = new Date(array[index - 1]?.createdAt);
+    const createdAt = new Date(array[index]?.createdAt);
+    const prevTime = prevState.getFullYear() + '年' 
+      + (prevState.getMonth() + 1) + '月'
+      + prevState.getDate() + '日';
+    const postTime = createdAt.getFullYear() + '年'
+      + (createdAt.getMonth() + 1) + '月'
+      + createdAt.getDate() + '日';
+    const prevDate = prevState.getHours() + ':' + prevState.getMinutes();
+    const postDate = createdAt.getHours() + ':' + createdAt.getMinutes();
+    let timeFlag = true;
+    if (prevTime === postTime) timeFlag = !timeFlag;
+    let dateFlag = false;
+    if (prevDate === postDate && array[index - 1]?.sender?._id === array[index]?.sender?._id) {
+      dateFlag = !dateFlag;
+    }
+
+    return [ timeFlag, dateFlag, postTime ];
+  };
+
   if (isError) {
     console.log(error);
     return (
       <Navigate to='/login' state={{ referrer: location.pathname }} replace />
-    )
+    );
   }
   
   return (
@@ -108,11 +136,11 @@ const Chat = () => {
           <IconButton aria-label='hamburger-menu'
             icon={<GiHamburgerMenu size={20} />} size={20}
             bg='transparent' color='#f3f4f5' m='0 12px'
-            _hover={{ backgroundColor: 'transparent' }}
+            _hover={{ bg: 'transparent' }}
             display='none'
           />
           
-          {channel[0]?.directMessage
+          {channel?.directMessage
             ? <AtSignIcon boxSize='21px' flex='0 0 auto' m='0 9px' color='#82858f' />
             : <Icon as={BiHash} boxSize={'28px'} flex='0 0 auto' m='0 8px' color='#82858f' />
           }
@@ -120,7 +148,7 @@ const Chat = () => {
             fontSize='16px' lineHeight='20px' fontWeight='600'
             overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
           >
-            {channel[0]?.title || channel[0]?.allowedUsers[1].displayName}
+            {channel?.title}
           </Heading>
         </Flex>
         
@@ -133,9 +161,16 @@ const Chat = () => {
             <IconButton aria-label='メンバーリストを表示'
               icon={<MdPeopleAlt size={24} />} size={24}
               bg='transparent' m='0 8px' 
-              color={isOpen === 'メンバーリストを表示' ? '#fff'  : '#b8b9bf'}
-              _hover={{ bg: 'transparent', color: isOpen ? '#b8b9bf' : '#e0e1e5' }}
-              onClick={(e) => setIsOpen(isOpen ? '' : e.currentTarget.ariaLabel)}
+              color={
+                isOpen === 'メンバーリストを表示' ? '#fff' : '#b8b9bf'
+              }
+              _hover={{ 
+                bg: 'transparent', 
+                color: isOpen ? '#b8b9bf' : '#e0e1e5' 
+              }}
+              onClick={(e) => setIsOpen(
+                isOpen ? '' : e.currentTarget.ariaLabel
+              )}
             />
           </Tooltip>
 
@@ -144,11 +179,10 @@ const Chat = () => {
               h='24px' w='144px' p='2px 4px'
               border='none' outline='none'
               focusBorderColor='transparent'
-              bg='#1e1f22' color='#f3f4f5'
-              borderRadius='4px'
+              bg='#1e1f22' color='#f3f4f5' borderRadius='4px'
               fontSize='14px'
-              placeholder='検索'
               transition='width 0.25s ease'
+              placeholder='検索'
               css={css`
                 &::placeholder {
                   padding-left: 4px;
@@ -187,20 +221,7 @@ const Chat = () => {
           >
             <Box as={'ol'} listStyleType='none' pt='1.0625rem' m='auto 0 0'>
               {messages?.map((message, i, array) => {        
-                const prevState = new Date(array[i-1]?.createdAt);
-                const createdAt = new Date(array[i]?.createdAt);
-                const prevTime = prevState.getFullYear() + '年' + (prevState.getMonth() + 1) + '月' + prevState.getDate() + '日';
-                const postTime = createdAt.getFullYear() + '年' + (createdAt.getMonth() + 1) + '月' + createdAt.getDate() + '日';
-                const prevDate = prevState.getHours() + ':' + prevState.getMinutes();
-                const postDate = createdAt.getHours() + ':' + createdAt.getMinutes();
-                let timeFlag = true;
-                if (prevTime === postTime) {
-                  timeFlag = !timeFlag;
-                }
-                let dateFlag = false;
-                if (prevDate === postDate && array[i-1]?.sender?._id === array[i]?.sender?._id) {
-                  dateFlag = !dateFlag;
-                }
+                let [ timeFlag, dateFlag, postTime ] = calculateTime(i, array);
 
                 return (
                   <Box as={'li'} ref={messageRef} key={message?._id} 
@@ -219,7 +240,10 @@ const Chat = () => {
                       </Flex>
                     }
 
-                    <MessageBox message={message} {...(dateFlag && {dateFlag: true})} />
+                    <MessageBox 
+                      message={message} 
+                      {...(dateFlag && {dateFlag: true})} 
+                    />
                   </Box>
                 )
               })}
@@ -231,57 +255,12 @@ const Chat = () => {
           </Box>
         </Flex>
 
-        <Flex h='100%' minW={isOpen ? '240px' : '0'} bg='#2b2d31'>
-          <Box flex='0 0 auto' h='auto' w='100%' p='0 0 20px'
-            display={isOpen ? 'block' : 'none'}
-            css={css`
-              scrollbar-width: none;
-              -ms-overflow-style: none;
-              &::-webkit-scrollbar {
-                display: none;
-              }
-            `}
-          >
-            <Heading color='#949ba4'
-              p='24px 8px 0 16px' h='40px' 
-              fontSize='12px' fontWeight='600' lineHeight='16px'
-              overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
-            >
-              メンバー—{channel[0]?.parentServer?.members?.length}
-            </Heading>
-            <Box maxW='224px' m='0 8px' p='1px 0' borderRadius='4px'>
-              {channel[0]?.parentServer?.members?.map((member) => (
-                <Button key={member?._id} alignItems='center' justifyContent='start'
-                  h='42px' w='100%' p='0 8px' 
-                  bg='transparent' borderRadius='4px'
-                  _hover={{ bg: '#35373c' }}
-                >
-                  <Avatar 
-                    flex='0 0 auto' mr='12px'
-                    boxSize='32px' bg={member?.color}
-                    {...(member?.photoURL
-                      ? {src: member?.photoURL}
-                      : {icon: <FaDiscord />}
-                    )}
-                  />
-                  <Flex flex='1 1 auto' align='center' justify='flex-start'>
-                    <Text color='#949ba4' flex='0 1 auto'
-                      fontSize='16px' fontWeight='400' lineHeight='20px'
-                      overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
-                      >
-                      {member?.displayName}
-                    </Text>
-                    {channel[0]?.parentServer?.owner._id == member?._id && 
-                      <Icon as={FaCrown} boxSize='14px' 
-                        flex='0 0 auto' ml='4px' color='#f0b132' 
-                      />
-                    }
-                  </Flex>
-                </Button>
-              ))}
-            </Box>
-          </Box>
-        </Flex>
+        <ActiveSideBar 
+          isOpen={isOpen}
+          header={`メンバー—${channel?.parentServer?.members?.length}`}
+          members={channel?.parentServer?.members}
+          owner={channel?.parentServer?.owner}
+        />
       </Flex>
     </>
   )

@@ -21,12 +21,11 @@ io.on('connection', (socket) => {
     // ログイン時の処理
     socket.on('online', async (currentUser) => {
         socket.user = currentUser;
+        socket.join(currentUser._id);
 
         console.log('--------------------');
         console.log(`${currentUser?.displayName}がオンラインになりました`);
-        socket.join(currentUser._id);
 
-        
         await User.findByIdAndUpdate(currentUser._id, {
             $set: {
                 online: true,
@@ -55,8 +54,8 @@ io.on('connection', (socket) => {
     socket.on('approve_request', (request) => {
         console.log('フレンド申請が承諾されました');
         
-        io.to(`${request.to._id}`).to(`${request.from._id}`).emit('new_notices', 'フレンドが追加されました');
-        io.to(`${request.from._id}`).emit('update_request', 'フレンドが追加されました');
+        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('new_notices', 'フレンドが追加されました');
+        io.to(`${request?.from?._id}`).emit('update_request', 'フレンドが追加されました');
     });
 
     socket.on('deny_request', (targetUserId) => {
@@ -66,37 +65,39 @@ io.on('connection', (socket) => {
 
     socket.on('delete_friend', (friend) => {
         console.log('フレンドが削除されました');
-        io.to(`${friend._id}`).emit('update_user', 'フレンドから削除されました');
+        io.to(`${friend?._id}`).emit('new_notices', 'フレンドから削除されました');
     });
 
     // チャンネル入室
-    socket.on('join_room', ({channelId, currentUser}) => {
+    socket.on('join_room', (channelId) => {
         socket.join(channelId);
         console.log('--------------------');
-        console.log(`${currentUser.displayName}が${channelId}に入室 `, socket.rooms);
+        console.log(`${socket?.user?.displayName}が${channelId}に入室 `, socket.rooms);
     });
 
     // チャンネル退出
-    socket.on('leave_room', ({channelId, currentUser}) => {
+    socket.on('leave_room', (channelId) => {
         socket.leave(channelId);
         console.log('--------------------');
-        console.log(`${currentUser.displayName}が${channelId}から退室 `, socket.rooms);
+        console.log(`${socket?.user?.displayName}が${channelId}から退室 `, socket.rooms);
     });
 
+    // socket.on('create_channel', async ())
+
     socket.on('send_message', async (newMessage) => {
-        const channelId = newMessage.postedChannel._id;
+        const channelId = newMessage?.postedChannel?._id;
         io.to(channelId).emit('sended_message', newMessage);
 
         // カレントユーザーを除くチャンネル参加者
-        const members = newMessage.postedChannel.allowedUsers.filter((member) => {
-            return member._id !== newMessage.sender._id;
+        const members = newMessage?.postedChannel?.allowedUsers?.filter((member) => {
+            return member?._id !== newMessage?.sender?._id;
         });
         console.log('--------------------');
-        console.log('members:', members.length);
+        console.log('members:', members?.length);
         
-        if (members.length) {
+        if (members?.length) {
             const memberIds = members.map((member) => {
-                return member._id;
+                return member?._id;
             });
             
             console.log('--------------------');
@@ -105,41 +106,41 @@ io.on('connection', (socket) => {
             // チャンネル滞在者
             const readUserSockets = await io.in(channelId).fetchSockets();
             console.log('--------------------');
-            console.log('readUserSockets: ', readUserSockets.length);
+            console.log('readUserSockets: ', readUserSockets?.length);
 
-            if (readUserSockets.length == (memberIds.length + 1)) return;
+            if (readUserSockets?.length == (memberIds?.length + 1)) return;
 
             const readUserIds = readUserSockets.map((readUserSocket) => {
-                return readUserSocket.user._id;
+                return readUserSocket?.user?._id;
             });
             console.log('--------------------');
             console.log('readUserIds: ', readUserIds);
 
-            const unreadUserIds = memberIds.filter((memberId) => {
+            const unreadUserIds = memberIds?.filter((memberId) => {
                 return !readUserIds.includes(memberId);
             });
             console.log('--------------------');
             console.log('unreadUserIds: ', unreadUserIds);
 
             try {
-                if (newMessage.postedChannel.directMessage) {
+                if (newMessage?.postedChannel?.directMessage) {
                     await User.updateMany({
                         _id: {
                             $in: memberIds
                         }
                     }, {
                         $addToSet: {
-                            setDirectMessages: newMessage.postedChannel._id
+                            setDirectMessages: newMessage?.postedChannel?._id
                         }
                     });
                 }
 
                 unreadUserIds.forEach(async (unreadUserId) => {
-                    await Channel.findByIdAndUpdate(newMessage.postedChannel._id, {
+                    await Channel.findByIdAndUpdate(newMessage?.postedChannel?._id, {
                         $push: {
                             notifications: {
                                 recipient: unreadUserId,
-                                content: newMessage._id
+                                content: newMessage?._id
                             }
                         }
                     }, { 
@@ -235,7 +236,7 @@ io.on('connection', (socket) => {
         console.log('接続終了　ID: ', socket.id);
         console.log('reason: ', reason);
         
-        if (socket.user) {
+        if (socket?.user) {
             await User.findOneAndUpdate({ socketId: socket.id }, {
                 $set: {
                     online: false,
@@ -245,13 +246,14 @@ io.on('connection', (socket) => {
                 runValidators: true,
             });
 
-            const friendIds = socket.user.friends.map((friend) => {
-                return friend._id;
+            console.log(`${socket?.user?.displayName}がオフラインになりました`);
+
+            const friendIds = socket?.user?.friends.map((friend) => {
+                return friend?._id;
             });
 
-            if (friendIds.length) {
-                console.log(`${socket.user.displayName}がオフラインになりました`);
-                io.to(friendIds).emit('new_notices', `${socket.user.displayName}がオフラインになりました`);
+            if (friendIds?.length) {
+                io.to(friendIds).emit('new_notices', `${socket?.user?.displayName}がオフラインになりました`);
             }
         }
     });

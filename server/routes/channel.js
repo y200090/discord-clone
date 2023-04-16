@@ -9,22 +9,21 @@ router.post('/create', verify, async (req, res) => {
     const { channelName, serverId, category, privateChannel, allowedUsers } = req.body;
 
     try {
-        let channel;
-        if (!privateChannel) {
-            channel = await Channel.create({
-                title: channelName,
-                parentServer: serverId,
-                privateChannel,
-                category,
-                allowedUsers
-            });
-        }
+        const channel = await Channel.create({
+            title: channelName,
+            parentServer: serverId,
+            privateChannel,
+            category,
+            allowedUsers
+        });
             
-        await Server.findOne({ _id: serverId }, {
+        await Server.findByIdAndUpdate(serverId, {
             $addToSet: {
                 ownedChannels: channel._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
         return res.status(200).json(channel);
         

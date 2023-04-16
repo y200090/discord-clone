@@ -5,17 +5,18 @@ import { BsPersonCheckFill } from 'react-icons/bs'
 import { MdAdd } from 'react-icons/md'
 import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
-import { selectCurrentUser } from '../../redux/slices/authSlice'
-import CreateDirectMessage from '../../features/CreateDirectMessage'
-import DirectMessageLink from '../DirectMessageLink'
-import SkeletonBox from '../SkeletonBox'
-import StatusPanel from '../StatusPanel'
+import { selectCurrentUser } from '../redux/slices/userSlice'
+import CreateDirectMessage from '../features/modals/CreateDirectMessage'
+import { DirectMessageLink, SkeletonBox, StatusPanel } from '../components'
 
 const Main = () => {
   const currentUser = useSelector(selectCurrentUser);
   const directMessages = currentUser?.setDirectMessages;
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const rest = { isOpen: isOpen, onClose: onClose };
+  const rest = { 
+    isOpen: isOpen, 
+    onClose: onClose 
+  };
 
   return (
     <>
@@ -142,7 +143,7 @@ const Main = () => {
           </Box>
         </Flex>
 
-        <StatusPanel />
+        <StatusPanel currentUser={currentUser} />
       </Flex>
 
       <Flex as={'main'} direction='column' position='relative' h='100%' w='100%' minW='0px' bg='#313338'>

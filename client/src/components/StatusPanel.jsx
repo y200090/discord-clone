@@ -1,21 +1,31 @@
 import { Avatar, Box, Flex, IconButton, Popover, PopoverArrow, PopoverBody, PopoverContent, PopoverTrigger, Tooltip, useDisclosure } from '@chakra-ui/react'
-import React from 'react'
+import React, { useState } from 'react'
 import { MdKeyboardVoice } from 'react-icons/md';
 import { BsHeadphones } from 'react-icons/bs';
 import { css } from '@emotion/react';
-import Settings from './Settings';
-import { useSelector } from 'react-redux';
-import { selectCurrentUser } from '../redux/slices/authSlice';
 import { FaDiscord } from 'react-icons/fa';
 import { SettingsIcon } from '@chakra-ui/icons';
+import Settings from '../layouts/Settings';
 
-const StatusPanel = () => {
-  const currentUser = useSelector(selectCurrentUser);
+const StatusPanel = ({ currentUser }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const rest = { isOpen: isOpen, onClose: onClose };
+  const [ isCopyComplete, setIsCopyComplete ] = useState(false);
+  const [ isMute, setIsMute ] = useState({
+    microphone: true,
+    speaker: true,
+  });
+  const rest = { 
+    isOpen: isOpen, 
+    onClose: onClose, 
+    currentUser: currentUser,
+  };
 
   const copyTextToClipboard = async () => {
+    setIsCopyComplete((prevState) => !prevState);
     await navigator.clipboard.writeText(currentUser?.tag);
+    setTimeout(() => {
+      setIsCopyComplete((prevState) => !prevState);
+    }, 1500);
   };
   
   return (
@@ -54,6 +64,7 @@ const StatusPanel = () => {
             </PopoverTrigger>
             <PopoverContent 
               w='inherit' bg='#23a559' borderRadius='4px' border='none'
+              display={isCopyComplete ? 'block' : 'none'}
               css={css`
                 &:focus-visible {
                   box-shadow: none;
@@ -68,39 +79,73 @@ const StatusPanel = () => {
           </Popover>
 
           <Flex flex='0 1 auto'>
-            <Tooltip label='ミュート解除'
-              hasArrow placement='top'
+            <Tooltip label={isMute.microphone ? 'マイクミュート解除' : 'マイクミュート'}
+              hasArrow placement='top' closeOnClick={false}
               bg='#111214' color='#e0e1e5'
+              p='5px 10px' borderRadius='4px'
             >
-              <Flex position='relative' align='center' justify='center'>
+              <Box position='relative'>
                 <IconButton aria-label='マイクミュート'
                   icon={<MdKeyboardVoice size='21px' />} size={'sm'}
                   color='#b5bac1' bg='transparent' borderRadius='4px'
-                  _hover={{ bg: '#3d3e45' }}
+                  _hover={{ 
+                    bg: '#3d3e45',
+                    '& + div': {
+                      outlineColor: '#3d3e45'
+                    }
+                  }}
+                  onClick={() => setIsMute(
+                    (prevState) => ({...prevState, microphone: !prevState.microphone})
+                  )}
                 />
-                <Box position='absolute'
-                  h='60%' w='2px' bg='#f23f42'
-                  borderRadius='12px'
+                <Box position='absolute' top='20%' left='50%'
+                  transform='translate(-20%, -50%)'
+                  h='70%' w='2px' bg='#f23f42'
+                  borderRadius='12px' outline='2px solid #232428'
+                  pointerEvents='none'
+                  display={isMute.microphone ? 'block' : 'none'}
                   css={css` 
                     transform: rotate(45deg); 
                   `}
                 />
-              </Flex>
+              </Box>
             </Tooltip>
-            <Tooltip label='スピーカーミュート'
-              hasArrow placement='top'
+            <Tooltip label={isMute.speaker ? 'スピーカーミュート解除' : 'スピーカーミュート'}
+              hasArrow placement='top' closeOnClick={false}
               bg='#111214' color='#e0e1e5'
+              p='5px 10px' borderRadius='4px'
             >
-              <IconButton aria-label='スピーカーミュート'
-                icon={<BsHeadphones size='21px' />} size={'sm'}
-                color='#b5bac1' bg='transparent'
-                borderRadius='4px'
-                _hover={{ bg: '#3d3e45' }}
-              />
+              <Box position='relative'>
+                <IconButton aria-label='スピーカーミュート'
+                  icon={<BsHeadphones size='21px' />} size={'sm'}
+                  color='#b5bac1' bg='transparent'
+                  borderRadius='4px'
+                  _hover={{ 
+                    bg: '#3d3e45',
+                    '& + div': {
+                      outlineColor: '#3d3e45'
+                    }
+                  }}
+                  onClick={() => setIsMute(
+                    (prevState) => ({...prevState, speaker: !prevState.speaker})
+                  )}
+                />
+                <Box position='absolute' top='20%' left='50%'
+                  transform='translate(-20%, -50%)'
+                  h='70%' w='2px' bg='#f23f42'
+                  borderRadius='12px' outline='2px solid #232428'
+                  pointerEvents='none'
+                  display={isMute.speaker ? 'block' : 'none'}
+                  css={css` 
+                    transform: rotate(45deg); 
+                  `}
+                />
+              </Box>
             </Tooltip>
             <Tooltip label='ユーザー設定'
               hasArrow placement='top'
               bg='#111214' color='#e0e1e5'
+              p='5px 10px' borderRadius='4px'
             >
               <IconButton aria-label='ユーザー設定'
                 icon={<SettingsIcon boxSize='21px' p='2px' />} size={'sm'}

@@ -1,16 +1,14 @@
 import { Flex, Image, Text } from '@chakra-ui/react';
 import React from 'react'
-import { useSelector } from 'react-redux'
 import { NoBlocking } from '../../assets';
-import { selectCurrentUser } from '../../redux/slices/authSlice'
 
-const Blocking = () => {
-  const currentUser = useSelector(selectCurrentUser);
-  const blockingUsersLength = Object.keys(currentUser).length === 0
-    ? 0
-    : currentUser?.friends?.blocking?.length;
+const Blocking = ({ currentUser }) => {
+  // const blockingUsers = currentUser.
+  // const blockingUsersLength = Object.keys(currentUser).length === 0
+  //   ? 0
+  //   : currentUser?.friends?.blocking?.length;
   
-  if (!blockingUsersLength) {
+  // if (!blockingUsersLength) {
     return (
       <>
         <Flex m='auto' direction='column' cursor='default'>
@@ -23,13 +21,13 @@ const Blocking = () => {
         </Flex>
       </>
     )
-  }
+  // }
     
-  return (
-    <>
+  // return (
+  //   <>
 
-    </>
-  )
+  //   </>
+  // )
 }
 
 export default Blocking

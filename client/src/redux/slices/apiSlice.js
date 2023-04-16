@@ -12,18 +12,9 @@ const baseQuery = fetchBaseQuery({
 });
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
-    await mutex.waitForUnlock();    
+    await mutex.waitForUnlock();
     let result = await baseQuery(args, api, extraOptions);
     console.log(result);
-
-    if (result?.data) {   
-        if (result?.meta?.response?.url === `${BASEURL}/user/authenticated`) {
-            api.dispatch(setCredential(result?.data));
-            if (!result?.data?.online) {
-                socket.emit('online', result?.data);
-            }
-        }
-    }
     
     if (result?.error?.status === 403) {
         if (!mutex.isLocked()) {
@@ -31,20 +22,15 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
             try {
                 console.log('アクセストークンを再発行します');
                 const refreshResult = await baseQuery({
-                    url: '/auth/refreshtoken',
+                    url: '/auth/refresh/token',
                     method: 'POST', 
                 }, api, extraOptions);
                 console.log(refreshResult);
 
                 if (refreshResult?.data) {
                     result = await baseQuery(args, api, extraOptions);
-
-                    if (result?.meta?.response?.url === `${BASEURL}/user/authenticated`) {
-                        api.dispatch(setCredential(result?.data));
-                        if (!result?.data?.online) {
-                            socket.emit('online', result?.data);
-                        }
-                    }
+                    console.log(refreshResult.data);
+                    // api.dispatch(setCredential(refreshResult.data.))
 
                 } else {
                     api.dispatch(logout());
@@ -65,7 +51,6 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
             result = await baseQuery(args, api, extraOptions);
         }
     }
-
     return result;
 };
 

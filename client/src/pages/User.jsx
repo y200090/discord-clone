@@ -1,34 +1,39 @@
 import { Flex } from '@chakra-ui/react'
 import React, { useEffect } from 'react'
-import { Navigate, Outlet, useLocation } from 'react-router-dom'
-import { Loading, NavBar } from '../components'
-import { useDispatch, useSelector } from 'react-redux'
-import { selectCurrentUser } from '../redux/slices/authSlice'
+import { Outlet } from 'react-router-dom'
+import { useSelector } from 'react-redux'
 import { useGetCurrentUserQuery } from '../redux/apis/userApi'
 import { socket } from '../socket'
+import { selectCredential } from '../redux/slices/authSlice'
+import { NavBar } from '../layouts'
 
 const User = () => {
-  const location = useLocation();
-  // const dispatch = useDispatch();
+  const credential = useSelector(selectCredential);
   const {
-    data,
-    isLoading,
-    isFetching,
-    isSuccess,
-    isError,
-    error,
+    data, 
     refetch,
-  } = useGetCurrentUserQuery({}, {
-    refetchOnMountOrArgChange: true,
-    refetchOnFocus: true, 
+  } = useGetCurrentUserQuery(credential, {
+    refetchOnFocus: true,
     refetchOnReconnect: true,
-    pollingInterval: 300000,
   });
-  const currentUser = useSelector(selectCurrentUser);
+
+  useEffect(() => {
+    socket.connect();
+
+    return () => {
+      console.log('unmount!');
+    }
+  }, []);
+
+  useEffect(() => {
+    if (data) {
+      socket.emit('online', data);
+    }
+  }, [data]);
 
   useEffect(() => {
     socket.on('new_notices', (message) => {
-      console.log(message);
+      console.log('==========\n', message, '\n==========');
       refetch();
     });
 
@@ -37,42 +42,17 @@ const User = () => {
     }
   }, [socket]);
 
-  // useEffect(() => {
-  //   socket.on('update_user', (message) => {
-  //     console.log(message);
-  //     refetch();
-  //   });
+  return (
+    <>
+      <Flex position='relative' h='100vh' w='100vw' overflow='hidden'>
+        <NavBar />
 
-  //   socket.on('notify', (message) => {
-  //     console.log(message);
-  //     refetch();
-  //   });
-    
-  //   return () => {
-  //     socket.off('update_user');
-  //     socket.off('notify');
-  //   }
-  // }, [socket]);
-
-  if (isLoading) {
-    return <Loading />
-    
-  } else if (isSuccess && currentUser) {
-    return (
-      <>
-        <Flex position='relative' h='100vh' w='100vw' overflow='hidden'>
-          <NavBar />
-  
-          <Flex flexGrow='1' h='100%' w='100%'>
-            <Outlet />
-          </Flex>
+        <Flex flexGrow='1' h='100%' w='100%'>
+          <Outlet />
         </Flex>
-      </>
-    )
-    
-  } else if (isError) {
-    return <Navigate to='/login' state={{ referrer: location.pathname }} replace />
-  }
+      </Flex>
+    </>
+  );
 }
 
 export default User

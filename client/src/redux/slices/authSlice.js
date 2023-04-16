@@ -1,26 +1,28 @@
 import { createSlice, createSelector } from "@reduxjs/toolkit";
+import jwt_decode from 'jwt-decode';
 
 export const authSlice = createSlice({
     name: 'auth', 
     initialState: {
-        currentUser: null,
+        token: null,
     },
     reducers: {
         setCredential: (state, action) => {
-            state.currentUser = action.payload;
+            const data = jwt_decode(action.payload);
+            state.token = data?.userId;
         },
         logout: (state) => {
-            state.currentUser = null;
+            state.token = null;
         },
     }
 });
 
-export const { setCredential, refetchFunc, logout } = authSlice.actions;
+export const { setCredential, logout } = authSlice.actions;
 export default authSlice.reducer;
 
 const selectAuth = (state) => state.auth;
 
-export const selectCurrentUser = createSelector(
+export const selectCredential = createSelector(
     [selectAuth], 
-    (state) => state.currentUser
+    (state) => state.token
 );

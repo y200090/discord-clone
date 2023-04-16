@@ -49,7 +49,11 @@ const UserSchema = new mongoose.Schema({
     socketId: {
         type: String,
         default: ''
-    }
+    },
+    notifications: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Notification'
+    }]
 }, { 
     timestamps: true 
 });

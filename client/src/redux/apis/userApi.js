@@ -1,27 +1,21 @@
-import { socket } from "../../socket";
 import { apiSlice } from "../slices/apiSlice";
+import { setCurrentUser } from "../slices/userSlice";
 
 export const userApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
         getCurrentUser: builder.query({
-            query: () => ({
-                url: '/user/authenticated',
+            query: (userId) => ({
+                url: `/user/get/info/${userId}`,
                 method: 'GET', 
             }),
             providesTags: ['User'],
-            async onCacheEntryAdded(
-                arg,
-                { cacheDataLoaded, cacheEntryRemoved }
+            async onQueryStarted(
+                arg, 
+                { dispatch, queryFulfilled }
             ) {
-                socket.connect();
-
                 try {
-                    const result = await cacheDataLoaded;
-                    // if (result?.data) {
-                    //     socket.emit('online', result?.data);
-                    // }
-
-                    await cacheEntryRemoved;
+                    const { data } = await queryFulfilled;
+                    dispatch(setCurrentUser(data));
 
                 } catch (err) {
                     console.log(err);

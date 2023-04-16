@@ -6,9 +6,9 @@ export const channelApi = apiSlice.injectEndpoints({
             query: (body) => ({
                 url: '/channel/create',
                 method: 'POST',
-                body: {...body},
+                body,
             }),
-            invalidatesTags: ['Server']
+            invalidatesTags: ['Server', 'User']
         }),
         getChannelInfo: builder.query({
             query: (channelId) => ({

@@ -4,8 +4,8 @@ import React, { useRef, useState } from 'react'
 import { MdAddCircle } from 'react-icons/md'
 import { useSelector } from 'react-redux';
 import { useParams } from 'react-router-dom';
-import { usePostMessageMutation } from '../redux/apis/messageApi';
-import { selectCurrentUser } from '../redux/slices/authSlice';
+import { usePostMessageMutation } from '../../redux/apis/messageApi';
+import { selectCurrentUser } from '../../redux/slices/userSlice'
 
 const SendMessage = () => {
   const { channelId } = useParams();

@@ -1,39 +1,36 @@
-import React, { useEffect } from 'react'
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react'
+import { useSelector } from 'react-redux';
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { useGetCurrentUserQuery } from '../redux/apis/userApi';
-import { selectCurrentUser, setCredential } from '../redux/slices/authSlice';
 import Loading from './Loading';
+import { selectCredential } from '../redux/slices/authSlice';
+import { useGetCredentialQuery } from '../redux/apis/authApi';
+import { useCookies } from 'react-cookie';
 
 const ProtectedRoute = () => {
   const location = useLocation();
-  const { 
-    data,
-    isSuccess, 
-    isError, 
+  // const [ cookies ] = useCookies(['logged_in']);
+  const {
     isLoading, 
     isFetching, 
-    error,
-    refetch
-  } = useGetCurrentUserQuery({
-    refetchOnFocus: true, 
+    isSuccess, 
+    isError,
+    error
+  } = useGetCredentialQuery({}, {
+    refetchOnFocus: true,
     refetchOnReconnect: true,
+    pollingInterval: 180000
   });
-  const currentUser = useSelector(selectCurrentUser);
-  const dispatch = useDispatch();
+  const credential = useSelector(selectCredential);
 
-  useEffect(() => {
-    if (data) {
-      dispatch(setCredential({...data}));
-    }
-  }, [dispatch, data]);
-
-  if (isSuccess || Object.keys(currentUser).length) {
-    return <Outlet />
-
-  } else if (isError) {
-    console.log(error)
-    return <Navigate to='/login' state={{ referrer: location.pathname}} replace />
+  if (isLoading || isFetching) return <Loading />;
+  else if (isSuccess && credential) return <Outlet />;
+  else if (isError) {
+    console.log('============\nトークン切れです。\n============');
+    console.log(error);
+    console.log(location);
+    return (
+      <Navigate to='/login' state={{ referrer: location.pathname}} replace />
+    );
   }
 };
 

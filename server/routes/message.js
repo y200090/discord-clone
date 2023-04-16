@@ -40,8 +40,13 @@ router.get('/history/:channelId', verify, async (req, res) => {
             'sender', 
             'readUsers'
         ]);
+        if (messages.length) {
+            return res.status(200).json(messages);
 
-        return res.status(200).json(messages);
+        } else {
+            return res.status(200).json(null);
+        }
+
         
     } catch (err) {
         return res.status(500).json(err);

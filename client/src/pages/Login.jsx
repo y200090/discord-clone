@@ -1,20 +1,22 @@
 import { Box, Button, FormControl, FormErrorMessage, FormLabel, Heading, IconButton, Image, Input, InputGroup, InputRightElement, Link as ChakraLink, Text, VStack } from '@chakra-ui/react'
 import styled from '@emotion/styled'
-import React, { useEffect, useState } from 'react'
-import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Navigate, Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { MdVisibility, MdVisibilityOff } from 'react-icons/md'
-import MotionForm from '../components/layouts/MotionForm'
 import { discordLogo } from '../assets'
-import { useDispatch, useSelector } from 'react-redux'
+import { useDispatch } from 'react-redux'
 import { useLoginMutation } from '../redux/apis/authApi'
-import { selectCurrentUser, setCredential } from '../redux/slices/authSlice'
+import { setCredential } from '../redux/slices/authSlice'
+import { setCurrentUser } from '../redux/slices/userSlice'
+import { useCookies } from 'react-cookie';
+import { MotionForm } from '../layouts';
 
 const Login = () => {
-  const [ isRevealPassword, setIsRevealPassword ] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const [ cookies ] = useCookies(['logged_in']);
   const [ login ] = useLoginMutation();
   const {
     register, 
@@ -27,11 +29,13 @@ const Login = () => {
   } = useForm({
     shouldFocusError: true,
   });
+  const [ isRevealPassword, setIsRevealPassword ] = useState(false);
 
   const onSubmit = async (data) => {
     try {
-      const user = await login({...data}).unwrap();
-      dispatch(setCredential({...user}));
+      const result = await login({...data}).unwrap();
+      dispatch(setCredential(result.accessToken));
+      dispatch(setCurrentUser(result.user));
       reset();
       navigate(location?.state?.referrer || '/channels/@me');
       
@@ -56,6 +60,12 @@ const Login = () => {
     color: #f23f43;
     margin-left: 4px;
   `;
+
+  if (cookies.logged_in) {
+    return (
+      <Navigate to={location?.state?.referrer || '/channels/@me'} />
+    );
+  }
 
   return (
     <>
@@ -84,13 +94,9 @@ const Login = () => {
 
           <Box w='100%'>
             <FormControl mb='20px' isInvalid={errors.email}>
-              <FormLabel
-                fontSize='12px'
-                lineHeight='16px'
-                fontWeight='700'
-                display='flex'
-                alignItems='center'
-                htmlFor='email'
+              <FormLabel htmlFor='email'
+                fontSize='12px' lineHeight='16px' fontWeight='700'
+                display='flex' alignItems='center'
               >
                 {errors.email 
                   ? <Text color='#fa777b'>メールアドレス</Text>
@@ -99,12 +105,8 @@ const Login = () => {
 
                 <RequiredStar>
                   {errors.email ? 
-                    <FormErrorMessage
-                      color='#fa777b'
-                      fontSize='12px'
-                      lineHeight='16px'
-                      fontWeight='500'
-                      m='0'
+                    <FormErrorMessage color='#fa777b' m='0'
+                      fontSize='12px' lineHeight='16px' fontWeight='500'
                     >
                       - {errors.email.message}
                     </FormErrorMessage>
@@ -113,16 +115,11 @@ const Login = () => {
                 </RequiredStar>
               </FormLabel>
 
-              <Input 
-                type='text' 
-                id='email' 
-                bg='#1e1f22' 
-                color='#dbdce0'
-                border='none'
+              <Input type='text' id='email' autoFocus
+                bg='#1e1f22' color='#dbdce0' border='none'
                 focusBorderColor='transparent'
                 errorBorderColor='transparent'
                 borderRadius='4px' 
-                autoFocus
                 {...register('email', EmailValidator)}
               />
             </FormControl>

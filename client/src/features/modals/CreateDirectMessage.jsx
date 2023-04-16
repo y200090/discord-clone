@@ -5,14 +5,17 @@ import { FaDiscord } from 'react-icons/fa';
 import { SlClose } from 'react-icons/sl';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useAppendDirectMessageMutation, useGroupDirectMessageCreationMutation } from '../redux/apis/channelApi';
-import { selectCurrentUser } from '../redux/slices/authSlice';
+import { useAppendDirectMessageMutation, useGroupDirectMessageCreationMutation } from '../../redux/apis/channelApi';
+import { selectCurrentUser } from '../../redux/slices/userSlice';
 
 const CreateDirectMessage = ({ isOpen, onClose }) => {
   const currentUser = useSelector(selectCurrentUser);
-  const friends = Object.keys(currentUser).length === 0
+  // const friends = Object.keys(currentUser).length === 0
+  //   ? []
+  //   : currentUser.friends;
+  const friends = currentUser?.friends == null 
     ? []
-    : currentUser.friends;
+    : currentUser?.friends;
   const [ AppendDirectMessage ] = useAppendDirectMessageMutation();
   const [ GroupDirectMessageCreation ] = useGroupDirectMessageCreationMutation()
   const navigate = useNavigate();
