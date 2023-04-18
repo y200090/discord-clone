@@ -9,7 +9,7 @@ const generateAccessToken = (userId) => {
     return jwt.sign(
         { userId }, 
         process.env.ACCESS_TOKEN_SECRET_KEY, 
-        { expiresIn: '1m' },
+        { expiresIn: '30m' },
     );
 };
 
@@ -17,7 +17,7 @@ const generateRefreshToken = (userId) => {
     return jwt.sign(
         { userId }, 
         process.env.REFRESH_TOKEN_SECRET_KEY, 
-        { expiresIn: '3m' },
+        { expiresIn: '1h' },
     );
 };
 
@@ -69,7 +69,11 @@ router.post('/register', async (req, res) => {
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true, 
         });
-        res.cookie('logged_in', true, loggedInOptions);
+        res.cookie('logged_in', true, {
+            httpOnly: false,
+            expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+            // expires: new Date(Date.now() + 60000), // 1分
+        });
 
         return res.status(200).json({ user, accessToken });
         
@@ -116,8 +120,8 @@ router.post('/login', async (req, res) => {
             });
             res.cookie('logged_in', true, {
                 httpOnly: false,
-                // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
-                expires: new Date(Date.now() + 60000), // 1分
+                expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+                // expires: new Date(Date.now() + 60000), // 1分
             });
 
             return res.status(200).json({ user, accessToken });
@@ -188,7 +192,11 @@ router.post('/refresh/token', async (req, res) => {
                 res.cookie('refresh_token', newRefreshToken, {
                     httpOnly: true, 
                 });
-                res.cookie('logged_in', true, loggedInOptions);
+                res.cookie('logged_in', true, {
+                    httpOnly: false,
+                    expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+                    // expires: new Date(Date.now() + 60000), // 1分
+                });
 
                 return res.status(200).json({ 
                     accessToken: newAccessToken 

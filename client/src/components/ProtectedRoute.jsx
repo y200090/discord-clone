@@ -18,7 +18,7 @@ const ProtectedRoute = () => {
   } = useGetCredentialQuery({}, {
     refetchOnFocus: true,
     refetchOnReconnect: true,
-    pollingInterval: 180000
+    pollingInterval: 3600000
   });
   const credential = useSelector(selectCredential);
 

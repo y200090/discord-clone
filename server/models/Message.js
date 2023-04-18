@@ -5,6 +5,10 @@ const MessageSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'
     },
+    type: {
+        type: String,
+        default: 'テキスト'
+    },
     body: {
         type: String,
         default: ''

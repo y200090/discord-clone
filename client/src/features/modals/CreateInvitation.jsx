@@ -6,10 +6,35 @@ import { BiHash } from 'react-icons/bi'
 import { HiSpeakerWave } from 'react-icons/hi2';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
+import { FaDiscord } from 'react-icons/fa';
+import { useServerInvitationMutation } from '../../redux/apis/serverApi';
 
 const CreateInvitation = (props) => {
   const { isOpen, onClose, channelName, category, server } = props;
   const currentUser = useSelector(selectCurrentUser);
+  const [ ServerInvitation, { isLoading, isSuccess } ] = useServerInvitationMutation();
+
+  const param = 'http://localhost:8000/server/join/349857g3943948u5h9';
+
+  const copyTextToClipboard = async () => {
+    await navigator.clipboard.writeText(param);
+  };
+
+  const handleInvitation = async (e) => {
+    console.log(e.currentTarget.id);
+    try {
+      const result = await ServerInvitation({
+        link: param,
+        currentUserId: currentUser?._id,
+        targetUserId: e.currentTarget.id,
+      });
+
+      console.log(result);
+      
+    } catch (err) {
+      console.log(err);
+    }
+  };
   
   return (
     <>
@@ -21,8 +46,7 @@ const CreateInvitation = (props) => {
           borderRadius='4px' bg='#313338'
           display='flex' flexDirection='column'
         >
-          <ModalHeader
-            flex='0 0 auto' p='16px'
+          <ModalHeader flex='0 0 auto' p='16px'
             boxShadow='0 1px 0 0 #222328'
           >
             <Box>
@@ -89,45 +113,56 @@ const CreateInvitation = (props) => {
               }
             `}
           >
-            <Flex align='center' justify='space-between'
-              h='44px' w='100%' p='7px 6px 7px 8px'
-              borderRadius='3px' bg='transparent'
-              _hover={{ 
-                bg: '#393c41', 
-                button: {
-                  bg: '#248046',
-                  borderColor: '#248046'
-                }
-              }}
-            >
-              <Flex align='center' mr='4px' cursor='default'>
-                <Avatar boxSize='32px' 
-                  flex='0 0 auto' mr='10px'
-                  
-                />
-                <Box color='#f9f9f9'
-                  overflow='hidden' 
-                  whiteSpace='nowrap' 
-                  textOverflow='ellipsis'
-                  fontSize='16px' fontWeight='400' lineHeight='20px'
-                >
-                  Heck
-                </Box>
-              </Flex>
-              <Button flex='0 0 auto' 
-                h='32px' minH='32px' w='72px' minW='60px'
-                bg='transparent' color='#fff'
-                border='1px solid #23a559' borderRadius='3px'
-                fontSize='14px' lineHeight='16px' fontWeight='500'
-                _hover={{
-                  bg: '#1a6334 !important', 
-                  borderColor: '#1a6334 !important'
+            {currentUser?.friends?.map((friend) => (
+              <Flex key={friend?._id}
+                align='center' justify='space-between'
+                h='44px' w='100%' p='7px 6px 7px 8px'
+                borderRadius='3px' bg='transparent'
+                _hover={{ 
+                  bg: '#393c41', 
+                  button: {
+                    bg: '#248046',
+                    borderColor: '#248046'
+                  }
                 }}
-                onClick={() => console.log('招待')}
               >
-                招待
-              </Button>
-            </Flex>
+                <Flex align='center' mr='4px' cursor='default'>
+                  <Avatar boxSize='32px' 
+                    flex='0 0 auto' mr='10px'
+                    {...(friend?.photoURL
+                      ? {src: friend?.photoURL}
+                      : {
+                        icon: <FaDiscord />,
+                        bg: friend?.color,
+                      }
+                    )}
+                  />
+                  <Box color='#f9f9f9'
+                    overflow='hidden' 
+                    whiteSpace='nowrap' 
+                    textOverflow='ellipsis'
+                    fontSize='16px' fontWeight='400' lineHeight='20px'
+                  >
+                    {friend?.displayName}
+                  </Box>
+                </Flex>
+                <Button flex='0 0 auto' id={friend?._id}
+                  h='32px' minH='32px' w='auto' minW='60px'
+                  bg='transparent' color='#fff'
+                  border='1px solid #23a559' borderRadius='3px'
+                  fontSize='14px' lineHeight='16px' fontWeight='500'
+                  _hover={{
+                    bg: '#1a6334 !important', 
+                    borderColor: '#1a6334 !important'
+                  }}
+                  onClick={handleInvitation}
+                  isLoading={isLoading}
+                  isDisabled={isSuccess}
+                >
+                  {isSuccess ? '招待しました' : '招待'}
+                </Button>
+              </Flex>
+            ))}
           </ModalBody>
           <ModalFooter
             flex='0 0 auto' p='16px' zIndex={1}
@@ -143,8 +178,7 @@ const CreateInvitation = (props) => {
                 w='100%' borderRadius='3px' bg='#1e1f22'
               >
                 <Input type='text' id='invitationURL' 
-                  isReadOnly
-                  value={'https://discord-clone/39475yr3oq'}
+                  isReadOnly value={param}
                   flexGrow={1} h='40px' w='100%' p='10px' 
                   border='transparent' bg='transparent' color='#dbdee1'
                   fontSize='16px' fontWeight='400'
@@ -154,6 +188,7 @@ const CreateInvitation = (props) => {
                   bg='#5865f2' color='#fff' borderRadius='3px'
                   fontSize='14px' lineHeight='16px' fontWeight='500'
                   _hover={{ bg: '#4752c4' }}
+                  onClick={copyTextToClipboard}
                 >
                   コピー
                 </Button>

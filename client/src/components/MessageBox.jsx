@@ -60,10 +60,17 @@ const MessageBox = ({ message, dateFlag }) => {
               {(today ? '今日' : postTime) + postDate}
             </Text>
           </Box>
-          <Text color='#dbdee1'
+          <Text as={'div'} color='#dbdee1'
             fontSize='1rem' lineHeight='1.375rem' whiteSpace='break-spaces'
           >
-            {message.body}
+            {message.type === '招待リンク'
+              ? (
+                <Box>
+                  {message.body}
+                </Box>
+              )
+              : message.body
+            }
           </Text>
         </Box>
       </Flex>

@@ -1,3 +1,4 @@
+import { socket } from '../../socket';
 import { apiSlice } from '../slices/apiSlice';
 
 export const serverApi = apiSlice.injectEndpoints({
@@ -24,7 +25,23 @@ export const serverApi = apiSlice.injectEndpoints({
                 method: 'POST',
                 body
             }),
-            invalidatesTags: ['Server', 'User']
+            invalidatesTags: ['Server', 'User'],
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    const newMessage = await cacheDataLoaded;
+                    console.log('新しいメッセージ: ', newMessage)
+
+                    socket.emit('send_message', newMessage.data);
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         ServerEditProfile: builder.mutation({
             query: (body) => ({

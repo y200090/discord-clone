@@ -82,7 +82,8 @@ io.on('connection', (socket) => {
         console.log(`${socket?.user?.displayName}が${channelId}から退室 `, socket.rooms);
     });
 
-    // socket.on('create_channel', async ())
+    // socket.on('create_channel', async () => {
+    // })
 
     socket.on('send_message', async (newMessage) => {
         const channelId = newMessage?.postedChannel?._id;
