@@ -16,100 +16,151 @@ const io = new Server(server, {
 // ソケット通信接続時の処理
 io.on('connection', (socket) => {
     console.log('--------------------');
+    console.log('--------------------');
     console.log(`接続開始　ID: ${socket.id}`);
 
     // ログイン時の処理
-    socket.on('online', async (currentUser) => {
+    socket.on('now_online', async (currentUser) => {
         socket.user = currentUser;
-        socket.join(currentUser._id);
+        socket.join(currentUser?._id);
 
         console.log('--------------------');
         console.log(`${currentUser?.displayName}がオンラインになりました`);
 
-        await User.findByIdAndUpdate(currentUser._id, {
+        // if (currentUser?.online) return;
+        
+        // console.log('--------------------');
+        console.log('オンラインステータスを変更します');
+
+        const newCurrentUser = await User.findByIdAndUpdate(currentUser?._id, {
             $set: {
                 online: true,
                 socketId: socket.id
             }
         }, { 
-            runValidators: true 
+            runValidators: true,
+            new: true, 
+            upsert: true,
         });
 
-        if (currentUser.online) return;
-
-        const friendIds = currentUser.friends.map((friend) => {
+        const friendIds = currentUser?.friends.map((friend) => {
             return friend._id;
         });
 
         if (friendIds.length) {
-            io.to(friendIds).emit('new_notices', 'フレンドがオンラインになりました');
+            io.to(friendIds).emit('update_online_status', newCurrentUser);
         }
     });
 
-    socket.on('send_request', async (targetUserId) => {
-        console.log(`${targetUserId}から${socket?.user?._id}へフレンド申請が届きました`);
-        io.to(targetUserId).emit('update_request', 'フレンド申請が届きました');
+    socket.on('create_server', async (newServer) => {
+        console.log('--------------------');
+        console.log('新しいサーバーが作成されました:', newServer);
+        io.to(socket.id).emit('new_server_created', newServer);
+        io.to(socket.id).emit('new_channel_created', ...newServer?.ownedChannels);
     });
 
-    socket.on('approve_request', (request) => {
-        console.log('フレンド申請が承諾されました');
-        
-        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('new_notices', 'フレンドが追加されました');
-        io.to(`${request?.from?._id}`).emit('update_request', 'フレンドが追加されました');
+    socket.on('send_request', async (newRequest) => {
+        console.log('--------------------');
+        console.log(`${socket?.user?.tag}が${newRequest?.to?.tag}へフレンド申請を送信しました`);
+        io.to(`${newRequest?.to?._id}`).to(`${newRequest?.from?._id}`).emit('receive_request', newRequest);
     });
 
-    socket.on('deny_request', (targetUserId) => {
-        console.log('フレンド申請が拒否されました');
-        io.to(targetUserId).emit('update_request', 'フレンド申請を削除しました');
+    socket.on('approve_request', (data) => {
+        const request = data?.request;
+        const newDirectMessage = data?.newDirectMessage;
+        console.log('--------------------');
+        console.log('フレンド申請が承認されました');
+        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('delete_request', request);
+        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('new_channel_created', newDirectMessage);
+
+        io.to(`${request?.to?._id}`).emit('request_approved', request?.from);
+        io.to(`${request?.from?._id}`).emit('request_approved', request?.to);
+    });
+
+    socket.on('discard_request', (request) => {
+        console.log('--------------------');
+        console.log('フレンド申請が破棄されました');
+        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('delete_request', request);
     });
 
     socket.on('delete_friend', (friend) => {
         console.log('フレンドが削除されました');
-        io.to(`${friend?._id}`).emit('new_notices', 'フレンドから削除されました');
+        io.to(friend?._id).emit('friend_deleted', socket?.user?._id);
+        io.to(socket.id).emit('friend_deleted', friend?._id);
+    });
+
+    socket.on('add_direct_message', (DM) => {
+        console.log('--------------------');
+        console.log('DMを追加しました');
+        if (DM?.category === 'ダイレクトメッセージ') {
+            io.to(socket.id).emit('direct_message_added', DM);
+
+        } else if (DM?.category === 'グループダイレクトメッセージ') {
+            let allowedUserIds = DM?.allowedUsers?.map((user) => {
+                return user?._id;
+            });
+            console.log(allowedUserIds);
+            io.to(allowedUserIds).emit('new_channel_created', DM);
+            io.to(allowedUserIds).emit('direct_message_added', DM);
+        }
+    });
+
+    socket.on('remove_direct_message', (directMessageId) => {
+        console.log('--------------------');
+        console.log('DMを外しました');
+        io.to(socket.id).emit('direct_message_removed', directMessageId);
+    });
+
+    socket.on('withdraw_from_channel', (channel) => {
+        console.log('--------------------');
+        console.log(channel?._id, 'から脱退しました');
+        io.to(socket.id).emit('withdrawn_from_channel', channel);
+        io.to(socket.id).emit('direct_message_removed', channel?._id);
     });
 
     // チャンネル入室
-    socket.on('join_room', (channelId) => {
+    socket.on('join_room', ({ channelId, currentUser }) => {
         socket.join(channelId);
         console.log('--------------------');
-        console.log(`${socket?.user?.displayName}が${channelId}に入室 `, socket.rooms);
+        console.log(`${currentUser?.displayName}が${channelId}に入室 `, socket.rooms);
     });
 
     // チャンネル退出
-    socket.on('leave_room', (channelId) => {
+    socket.on('leave_room', ({ channelId, currentUser }) => {
         socket.leave(channelId);
         console.log('--------------------');
-        console.log(`${socket?.user?.displayName}が${channelId}から退室 `, socket.rooms);
+        console.log(`${currentUser?.displayName}が${channelId}から退室 `, socket.rooms);
     });
-
-    // socket.on('create_channel', async () => {
-    // })
-
+    
     socket.on('send_message', async (newMessage) => {
-        const channelId = newMessage?.postedChannel?._id;
-        io.to(channelId).emit('sended_message', newMessage);
-
-        // カレントユーザーを除くチャンネル参加者
-        const members = newMessage?.postedChannel?.allowedUsers?.filter((member) => {
-            return member?._id !== newMessage?.sender?._id;
-        });
         console.log('--------------------');
-        console.log('members:', members?.length);
-        
-        if (members?.length) {
-            const memberIds = members.map((member) => {
-                return member?._id;
-            });
-            
-            console.log('--------------------');
-            console.log('postedChannelId: ', channelId);
+        console.log('新しいメッセージが送信されました: ', newMessage?.body);
+        console.log(`送信者：${newMessage?.sender?.displayName}`);
+        console.log(`送信チャンネル：${newMessage?.postedChannel?._id}`);
+        console.log(`既読者：${newMessage?.readUsers?.length}`);
 
+        const channelId = newMessage?.postedChannel?._id;
+        const allowedUsers = newMessage?.postedChannel?.allowedUsers;
+        const allowedUserIds = allowedUsers?.map((user) => {
+            return user._id;
+        });
+        io.to(allowedUserIds).emit('message_sent', newMessage);
+            
+        // カレントユーザーを除くチャンネル参加者
+        const otherMemberIds = allowedUserIds.filter((userId) => {
+            return userId !== newMessage?.sender?._id;
+        });
+        
+        console.log('--------------------');
+        console.log('他のメンバーの人数:', otherMemberIds?.length);
+        
+        if (otherMemberIds?.length) {            
             // チャンネル滞在者
             const readUserSockets = await io.in(channelId).fetchSockets();
             console.log('--------------------');
             console.log('readUserSockets: ', readUserSockets?.length);
 
-            if (readUserSockets?.length == (memberIds?.length + 1)) return;
+            if (readUserSockets?.length == allowedUsers?.length) return;
 
             const readUserIds = readUserSockets.map((readUserSocket) => {
                 return readUserSocket?.user?._id;
@@ -117,7 +168,7 @@ io.on('connection', (socket) => {
             console.log('--------------------');
             console.log('readUserIds: ', readUserIds);
 
-            const unreadUserIds = memberIds?.filter((memberId) => {
+            const unreadUserIds = otherMemberIds?.filter((memberId) => {
                 return !readUserIds.includes(memberId);
             });
             console.log('--------------------');
@@ -127,17 +178,19 @@ io.on('connection', (socket) => {
                 if (newMessage?.postedChannel?.directMessage) {
                     await User.updateMany({
                         _id: {
-                            $in: memberIds
+                            $in: otherMemberIds
                         }
                     }, {
                         $addToSet: {
-                            setDirectMessages: newMessage?.postedChannel?._id
+                            setDirectMessages: channelId
                         }
                     });
-                }
 
+                    io.to(unreadUserIds).emit('direct_message_added', newMessage?.postedChannel);
+                }
+                
                 unreadUserIds.forEach(async (unreadUserId) => {
-                    await Channel.findByIdAndUpdate(newMessage?.postedChannel?._id, {
+                    await Channel.findByIdAndUpdate(channelId, {
                         $push: {
                             notifications: {
                                 recipient: unreadUserId,
@@ -147,52 +200,70 @@ io.on('connection', (socket) => {
                     }, { 
                         runValidators: true 
                     });
+
+                    io.to(unreadUserId).emit('new_notification_received', {
+                        channelId,
+                        recipient: unreadUserId,
+                        content: newMessage?._id,
+                    });
                 });
                 console.log('--------------------');
-                console.log('未読ユーザーに新規メッセージを通知しました');
+                console.log(`未読ユーザー${unreadUserIds}に新規メッセージを通知しました`);
     
             } catch (err) {
                 console.log(err);
             }
-
-            io.to(memberIds).except(channelId).emit('new_notices', '未読メッセージがあります');
         }
     });
 
     // 既読チェック
-    socket.on('read_messages', async ({channelId, currentUserId}) => {
+    socket.on('read_messages', async ({ currentChannel, currentUser}) => {
+        // const currentUserId = socket?.user?._id;
+        const channelId = currentChannel?._id;
+
+        console.log('--------------------');
+        console.log('チャンネル最新メッセージ：', currentChannel?.latestMessage);
+
+        // チャンネル滞在者
+        const readUserSockets = await io.in(channelId).fetchSockets();
+        console.log('--------------------');
+        console.log('チャンネル滞在者数: ', readUserSockets?.length);
+
+        // if (readUserSockets?.length == currentChannel.latestMessage?.readUsers?.length) return;
+        if (currentChannel?.latestMessage?.readUsers.includes(currentUser?._id)) return;
+        
         try {
             await Message.updateMany({
                 postedChannel: channelId,
                 readUsers: {
-                    $ne: currentUserId
+                    $ne: currentUser?._id
                 }
             }, {
                 $addToSet: {
-                    readUsers: currentUserId
+                    readUsers: currentUser?._id
                 }
             }, { 
                 runValidators: true 
             });
             console.log('--------------------');
-            console.log(`${channelId}の未読メッセージに既読をつけました`);
+            console.log(`${currentUser?._id}が${channelId}の未読メッセージに既読をつけました`);
 
-            const notice = await Channel.find({
+            const targetChannel = await Channel.findOne({
                 _id: channelId, 
                 notifications: {
                     $elemMatch: {
-                        recipient: currentUserId
+                        recipient: currentUser?._id
                     }
                 }
             });
             console.log('--------------------');
-            console.log('notice', notice);
+            console.log('notice', targetChannel?.notifications);
 
-            if (notice.length) {
+            if (targetChannel) {
                 await Channel.findByIdAndUpdate(channelId, {
                     $pull: {
                         notifications: {
-                            recipient: currentUserId
+                            recipient: currentUser?._id
                         }
                     }
                 }, { 
@@ -201,7 +272,10 @@ io.on('connection', (socket) => {
                 console.log('--------------------');
                 console.log('通知を消化しました');
 
-                io.to(currentUserId).emit('new_notices', '通知を消化しました');
+                io.to(currentUser?._id).emit('notification_cleared', { 
+                    channelId, 
+                    currentUserId: currentUser?._id,
+                });
             }
 
         } catch (err) {
@@ -209,30 +283,8 @@ io.on('connection', (socket) => {
         }        
     });
 
-    // // ログアウト時の処理
-    // socket.on('logged_out', async () => {
-    //     console.log('--------------------');
-    //     console.log(`${socket.id}がログアウトしました`);
-    //     socket.leave(socket?.user?._id);
-
-    //     await User.findByIdAndUpdate(socket?.user?._id, {
-    //         $set: {
-    //             online: false
-    //         }
-    //     }, { 
-    //         runValidators: true 
-    //     });
-
-    //     const friendIds = socket.user.friends.map((friend) => {
-    //         return friend._id;
-    //     });
-
-    //     if (friendIds.length) {
-    //         io.to(friendIds).emit('update_user', 'フレンドがオフラインになりました');
-    //     }
-    // });
-
     socket.on('disconnect', async (reason) => {
+        console.log('--------------------');
         console.log('--------------------');
         console.log('接続終了　ID: ', socket.id);
         console.log('reason: ', reason);
@@ -254,7 +306,7 @@ io.on('connection', (socket) => {
             });
 
             if (friendIds?.length) {
-                io.to(friendIds).emit('new_notices', `${socket?.user?.displayName}がオフラインになりました`);
+                io.to(friendIds).emit('update_online_status', socket.user);
             }
         }
     });

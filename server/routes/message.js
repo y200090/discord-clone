@@ -21,6 +21,14 @@ router.post('/post', verify, async (req, res) => {
             'readUsers'
         ]);
 
+        await Channel.findByIdAndUpdate(channelId, {
+            $set: {
+                latestMessage: newMessage._id,
+            },
+        }, {
+            runValidators: true,
+        });
+
         return res.status(200).json(newMessage);
         
     } catch (err) {
@@ -40,14 +48,12 @@ router.get('/history/:channelId', verify, async (req, res) => {
             'sender', 
             'readUsers'
         ]);
-        if (messages.length) {
-            return res.status(200).json(messages);
-
-        } else {
-            return res.status(200).json(null);
-        }
-
         
+        return res.status(200).json({ 
+            messages, 
+            currentChannelId: channelId 
+        });
+
     } catch (err) {
         return res.status(500).json(err);
     }

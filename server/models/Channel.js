@@ -43,6 +43,10 @@ const ChannelSchema = new mongoose.Schema({
             ref: 'Message'
         }
     }],
+    latestMessage: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Message',
+    },
 }, { 
     timestamps: true 
 });

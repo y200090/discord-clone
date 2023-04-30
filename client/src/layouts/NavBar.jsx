@@ -8,10 +8,11 @@ import { useSelector } from 'react-redux'
 import { CreateServer } from '../features'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import NavIcon from '../components/NavIcon'
+import { selectJoinedServers } from '../redux/slices/serverSlice'
 
 const NavBar = () => {
   const currentUser = useSelector(selectCurrentUser);
-  const servers = currentUser?.joinedServers;
+  const joinedServers = useSelector(selectJoinedServers);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { 
     isOpen: isOpen, 
@@ -50,7 +51,7 @@ const NavBar = () => {
               flexDirection='column-reverse'
               rowGap='8px'
             >
-              {servers?.map((server) => (
+              {joinedServers?.map((server) => (
                 <NavIcon 
                   key={server?._id}
                   toURL={`/channels/${server?._id}`}

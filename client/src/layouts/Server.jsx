@@ -9,20 +9,26 @@ import { IoClose } from 'react-icons/io5'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { ChannelLink, StatusPanel } from '../components'
-import { CreateChannel, CreateInvitation } from '../features'
+import { CreateChannel, CreateInvitationForm } from '../features'
+import { selectJoinedServers } from '../redux/slices/serverSlice'
 
 const Server = () => {
   const { serverId, channelId } = useParams();
   const currentUser = useSelector(selectCurrentUser);
-  let server;
-  if (serverId) {
-    server = currentUser?.joinedServers?.filter((joinedServer) => {
-      return joinedServer._id == serverId;
-    });
-    if (!server) server = [];
-    else if (server?.length) server = server[0];
-    console.log('サーバー情報：', server);
-  }
+  const joinedServers = useSelector(selectJoinedServers);
+  let currentServer = joinedServers?.filter((server) => {
+    return server?._id == serverId;
+  });
+  // let server;
+  // if (serverId) {
+  //   server = currentUser?.joinedServers?.filter((joinedServer) => {
+  //     return joinedServer._id == serverId;
+  //   });
+  //   console.log(server);
+  //   if (!server) server = [];
+  //   else if (server?.length) server = server[0];
+  //   console.log('サーバー情報：', server);
+  // }
   const navigate = useNavigate();
   const [ isModalOpen, setIsModalOpen ] = useState('');
   const [ arisingFrom, setArisingFrom ] = useState('');
@@ -33,24 +39,24 @@ const Server = () => {
     isOpen: isModalOpen === 'createChannel',
     onClose: () => setIsModalOpen(''),
     arisingFrom: arisingFrom,
-    server: server,
+    server: currentServer[0],
   };
 
-  const createInvitationRest = {
-    isOpen: isModalOpen === 'createInvitation',
+  const createInvitationFormRest = {
+    isOpen: isModalOpen === 'createInvitationForm',
     onClose: () => setIsModalOpen(''),
-    channelName: server?.length ? server?.ownedChannels[0]?.title : '一般',
+    channelName: currentServer[0]?.length ? currentServer[0]?.ownedChannels[0]?.title : '一般',
     category: 'テキストチャンネル',
-    server: server,
+    server: currentServer[0],
   };
 
   useEffect(() => {
     if (!channelId) {
-      if (server) {
-        navigate(`${server?.ownedChannels[0]}`);
+      if (currentServer[0]?.length) {
+        navigate(`${currentServer[0]?.ownedChannels[0]}`);
       }
     }
-  }, [channelId, server]);
+  }, [channelId, currentServer]);
 
   return (
     <>
@@ -66,7 +72,7 @@ const Server = () => {
                   0 1.5px 0 #232528, 
                   0 2px 0 #282a2e
                 '
-                zIndex='10' cursor='pointer'
+                zIndex='100' cursor='pointer'
                 _hover={{ bg: '#35373c' }}
                 css={css`
                   &[aria-expanded=true] {
@@ -94,7 +100,7 @@ const Server = () => {
                     fontSize='16px'  lineHeight='20px'  fontWeight='600' 
                     overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis' textAlign='start'
                   >
-                    {server?.title}
+                    {currentServer[0]?.title}
                   </Text>
                   <Icon as={MdKeyboardArrowDown} boxSize='22px' color='#cdced0' />
                   <Icon as={IoClose} boxSize='20px' color='#cdced0' transform='translateX(-1px)' />
@@ -104,6 +110,7 @@ const Server = () => {
             <PopoverContent 
               h='auto' maxH='calc(100vh - 32px)' w='220px' p='6px 8px'
               bg='#111214' border='none' borderRadius='4px'
+              zIndex={1000}
               css={css`
                 &:focus-visible {
                   outline: none;
@@ -115,7 +122,7 @@ const Server = () => {
                 h='auto' minH='32px' p='6px 8px' m='2px 0' 
                 bg='transparent' color='#949cf7' borderRadius='2px'
                 _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
-                onClick={() => setIsModalOpen('createInvitation')}
+                onClick={() => setIsModalOpen('createInvitationForm')}
               >
                 <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
                   友達を招待
@@ -212,7 +219,7 @@ const Server = () => {
                 </Flex>
               </Flex>
 
-              {server?.ownedChannels?.map((channel) => {
+              {currentServer[0]?.ownedChannels?.map((channel) => {
                 if (channel?.category === 'テキストチャンネル') {
                   return (
                     <ChannelLink key={channel?._id}
@@ -220,7 +227,7 @@ const Server = () => {
                       channelName={channel?.title}
                       category={channel?.category}
                       isAccordionOpen={isTextChannelOpen}
-                      server={server}
+                      server={currentServer[0]}
                     />
                   )
                 }
@@ -270,7 +277,7 @@ const Server = () => {
                 </Flex>
               </Flex>
 
-              {server?.ownedChannels?.map((channel) => {
+              {currentServer[0]?.ownedChannels?.map((channel) => {
                 if (channel?.category === 'ボイスチャンネル') {
                   return (
                     <ChannelLink key={channel?._id}
@@ -278,7 +285,7 @@ const Server = () => {
                       channelName={channel?.title}
                       category={channel?.category}
                       isAccordionOpen={isVoiceChannelOpen}
-                      server={server}
+                      server={currentServer[0]}
                     />
                   )
                 }
@@ -295,7 +302,7 @@ const Server = () => {
       </Flex>
 
       <CreateChannel {...createChannelRest} />
-      <CreateInvitation {...createInvitationRest} />
+      <CreateInvitationForm {...createInvitationFormRest} />
     </>
   )
 }

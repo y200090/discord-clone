@@ -7,28 +7,29 @@ import { Link as RouterLink } from 'react-router-dom';
 import { usePostFriendRequestMutation } from '../../redux/apis/friendApi';
 
 const AddToFriend = ({ currentUser }) => {
-  const [ PostFriendRequest, 
-    { 
-      isLoading, 
-      isSuccess, 
-      data,
-      isError,
-      error
-    } 
-  ] = usePostFriendRequestMutation();
-  const [ targetTag, setTargetTag ] = useState('');
+  const [ PostFriendRequest, { 
+    isLoading, 
+    isSuccess, 
+    data,
+    isError,
+    error
+  } ] = usePostFriendRequestMutation();
+  const [ targetUserTag, setTargetUserTag ] = useState('');
 
   const handleRequest = async (e) => {
     e.preventDefault();
 
     try {
-      await PostFriendRequest({ currentUser, targetTag });
+      await PostFriendRequest({ 
+        currentUserId: currentUser?._id, 
+        targetUserTag,
+      });
 
     } catch (err) {
       console.log(err);
 
     } finally {
-      setTargetTag('');
+      setTargetUserTag('');
     }
   };
 
@@ -61,13 +62,13 @@ const AddToFriend = ({ currentUser }) => {
               borderColor={isSuccess ? '#23a559' : isError && '#f23f42'}
             >
               <Box flex='1 1 auto' mr='16px'>
-                <Input type='text' id='userTag' value={targetTag}
+                <Input type='text' id='userTag' value={targetUserTag}
                   size='lg' minW='0px' p='4px 0' color='#f3f4f5'
                   border='none' outline='none'
                   focusBorderColor='transparent'
                   fontSize='16px' lineHeight='20px' fontWeight='500'
                   autoComplete='off'
-                  onChange={(e) => setTargetTag(e.target.value)}
+                  onChange={(e) => setTargetUserTag(e.target.value)}
                   placeholder='ユーザーIDを入力してください'
                   css={css`
                     &::placeholder {
@@ -76,7 +77,7 @@ const AddToFriend = ({ currentUser }) => {
                   `}
                 />
               </Box>
-              <Button type='submit' isDisabled={targetTag == ''}
+              <Button type='submit' isDisabled={targetUserTag == ''}
                 isLoading={isLoading}
                 h='32px' w='auto' minW='60px' p='2px 16px'
                 color='#f6f7fe' bg='#5865f2' borderRadius='3px'

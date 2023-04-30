@@ -1,7 +1,7 @@
 import React from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { ProtectedRoute } from './components'
-import { GuildDiscovery, Home, Login, Register, User } from './pages'
+import { GuildDiscovery, Home, Invite, Login, Register, User } from './pages'
 import { Chat, Friends, Main, Server } from './layouts'
 
 const App = () => {
@@ -10,6 +10,7 @@ const App = () => {
       <Route path='/' element={<Home />} />
       <Route path='/login' element={<Login />} />
       <Route path='/register' element={<Register />} />
+      <Route path='/invite/:invitationLink' element={<Invite />} />
 
       <Route element={<ProtectedRoute />}>
         <Route element={<User />}>

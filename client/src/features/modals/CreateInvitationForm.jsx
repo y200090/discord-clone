@@ -1,41 +1,58 @@
 import { SearchIcon } from '@chakra-ui/icons';
 import { Avatar, Box, Button, Flex, Heading, Icon, Input, InputGroup, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Text } from '@chakra-ui/react'
 import { css } from '@emotion/react';
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import { BiHash } from 'react-icons/bi'
 import { HiSpeakerWave } from 'react-icons/hi2';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
 import { FaDiscord } from 'react-icons/fa';
-import { useServerInvitationMutation } from '../../redux/apis/serverApi';
+import { useCreateInvitationMutation } from '../../redux/apis/serverApi';
+import { useGetInvitationInfoQuery } from '../../redux/apis/invitationApi';
 
-const CreateInvitation = (props) => {
+const CreateInvitationForm = (props) => {
   const { isOpen, onClose, channelName, category, server } = props;
   const currentUser = useSelector(selectCurrentUser);
-  const [ ServerInvitation, { isLoading, isSuccess } ] = useServerInvitationMutation();
+  const [ CreateInvitation, { 
+    data, isLoading, isSuccess, reset 
+  } ] = useCreateInvitationMutation();
+  // const { data: invitation } = useGetInvitationInfoQuery({
+  //   serverId: server?._id,
+  //   userId: currentUser?._id,
+  // }, {
+  //   skip: !isOpen,
+  // });
+  const [ targetUserIds, setTargetUserIds ] = useState([]);
 
-  const param = 'http://localhost:8000/server/join/349857g3943948u5h9';
+  const param = `http://localhost:8000/server/join/${server?.invitationLink}`;
 
   const copyTextToClipboard = async () => {
     await navigator.clipboard.writeText(param);
   };
 
   const handleInvitation = async (e) => {
-    console.log(e.currentTarget.id);
+    const friendId = e.currentTarget.id;
     try {
-      const result = await ServerInvitation({
+      await CreateInvitation({
         link: param,
         currentUserId: currentUser?._id,
-        targetUserId: e.currentTarget.id,
+        friendId: friendId,
       });
 
-      console.log(result);
+      setTargetUserIds([...targetUserIds, friendId]);
       
     } catch (err) {
       console.log(err);
     }
   };
   
+  useEffect(() => {
+    return () => {
+      setTargetUserIds([]);
+      reset();
+    };
+  }, [isOpen]);
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} isCentered scrollBehavior='inside'>
@@ -121,8 +138,12 @@ const CreateInvitation = (props) => {
                 _hover={{ 
                   bg: '#393c41', 
                   button: {
-                    bg: '#248046',
-                    borderColor: '#248046'
+                    bg: targetUserIds.includes(friend?._id)
+                      ? 'transparent'
+                      : '#248046',
+                    borderColor: targetUserIds.includes(friend?._id) 
+                      ? 'transparent'
+                      : '#248046',
                   }
                 }}
               >
@@ -149,17 +170,30 @@ const CreateInvitation = (props) => {
                 <Button flex='0 0 auto' id={friend?._id}
                   h='32px' minH='32px' w='auto' minW='60px'
                   bg='transparent' color='#fff'
-                  border='1px solid #23a559' borderRadius='3px'
+                  border={targetUserIds.includes(friend?._id) ? 'transparent' : '1px solid #23a559'} 
+                  borderRadius='3px'
                   fontSize='14px' lineHeight='16px' fontWeight='500'
                   _hover={{
-                    bg: '#1a6334 !important', 
-                    borderColor: '#1a6334 !important'
+                    bg: targetUserIds.includes(friend?._id) 
+                      ? 'transparent !important' 
+                      : '#1a6334 !important', 
+                    borderColor: targetUserIds.includes(friend?._id) 
+                      ? 'transparent !important' 
+                      : '#1a6334 !important', 
                   }}
                   onClick={handleInvitation}
-                  isLoading={isLoading}
-                  isDisabled={isSuccess}
+                  isLoading={!targetUserIds.includes(friend?._id) && data?.targetUserId == friend?._id && isLoading}
+                  isDisabled={targetUserIds.includes(friend?._id) || data?.targetUserId == friend?._id}
                 >
-                  {isSuccess ? '招待しました' : '招待'}
+                  {isSuccess
+                    ? (targetUserIds.includes(friend?._id)
+                      ? '送信済み' : '招待'
+                    )
+                    : (targetUserIds.includes(friend?._id)
+                      ? '送信済み'
+                      : '招待'
+                    )
+                  }
                 </Button>
               </Flex>
             ))}
@@ -193,11 +227,11 @@ const CreateInvitation = (props) => {
                   コピー
                 </Button>
               </Flex>
-              <Text color='#b5bac1' mt='8px'
+              {/* <Text color='#b5bac1' mt='8px'
                 fontSize='12px' lineHeight='16px' fontWeight='400'
               >
                 招待リンクは7日後に期限切れになります。
-              </Text>
+              </Text> */}
             </Flex>
           </ModalFooter>
         </ModalContent>
@@ -206,4 +240,4 @@ const CreateInvitation = (props) => {
   )
 }
 
-export default CreateInvitation
+export default CreateInvitationForm

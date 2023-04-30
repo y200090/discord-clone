@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const User = require('../models/User');
 const verify = require('../middleware/verify');
+const Server = require('../models/Server');
 
 router.get('/get/info/:userId', verify, async (req, res) => {
     const userId = req.params.userId;
@@ -33,7 +34,31 @@ router.get('/get/info/:userId', verify, async (req, res) => {
     } catch (err) {
         return res.status(500).json(err);
     }
-})
+});
+
+router.get('/joined-servers/:userId', verify, async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        const joinedServers = await Server.find({ members: userId })
+        .populate([
+            {path: 'members'},
+            {path: 'ownedChannels', populate: [
+                {path: 'parentServer', populate: [
+                    {path: 'members'},
+                    {path: 'owner'},
+                ]},
+                {path: 'allowedUsers'},
+            ]},
+            {path: 'owner'}
+        ]);
+
+        return res.status(200).json(joinedServers);
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
 
 router.post('/edit/profile', verify, async (req, res) => {
     const { currentUserId, newPhotoURL, newBannerColor, newDescription } = req.body;

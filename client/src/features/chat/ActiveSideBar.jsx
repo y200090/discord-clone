@@ -47,7 +47,7 @@ const ActiveSideBar = ({ isOpen, header, members, owner }) => {
                     >
                     {member?.displayName}
                   </Text>
-                  {owner._id == member?._id && 
+                  {owner?._id == member?._id && 
                     <Icon as={FaCrown} boxSize='14px' 
                       flex='0 0 auto' ml='4px' color='#f0b132' 
                     />

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { BiHash } from 'react-icons/bi'
 import { MdPeopleAlt } from 'react-icons/md'
 import { GiHamburgerMenu } from 'react-icons/gi'
-import { Navigate, useLocation, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import { AtSignIcon } from '@chakra-ui/icons'
 import { useGetMessagesQuery } from '../redux/apis/messageApi'
 import { socket } from '../socket'
@@ -12,67 +12,75 @@ import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { MessageBox } from '../components'
 import { ActiveSideBar, SendMessage } from '../features'
+import { selectParticipatingChannels } from '../redux/slices/channelSlice'
 
 const Chat = () => {
-  const { serverId, channelId } = useParams();
+  const { channelId } = useParams();
   const currentUser = useSelector(selectCurrentUser);
+  const participatingChannels = useSelector(selectParticipatingChannels);
+  console.log('参加チャンネル：', participatingChannels);
   console.log('カレントユーザー：', currentUser)
 
-  let channel;
-  if (serverId) {
-    const server = currentUser?.joinedServers?.filter((joinedServer) => {
-      return joinedServer._id == serverId;
-    });
-    console.log('サーバー情報：', server);
-    if (!server) channel = [];
-    else if (server?.length) { 
-      channel = server[0]?.ownedChannels?.filter((ownedChannel) => {
-        return ownedChannel._id == channelId;
-      });
-      if (channel?.length) channel = channel[0];
-    }
+  const currentChannel = participatingChannels?.filter((channel) => {
+    return channel?._id == channelId;
+  });
 
-  } else {
-    channel = currentUser?.setDirectMessages?.filter((directMessage) => {
-      return directMessage._id == channelId;
+  let friend;
+  if (currentChannel[0]?.directMessage) {
+    friend = currentChannel[0]?.allowedUsers?.filter((user) => {
+      return user?._id != currentUser?._id;
     });
-    if (channel?.length) channel = channel[0];
+    console.log(friend)
   }
-  console.log('チャンネル情報：', channel);
 
-  const { 
-    data: messages,
-    isError,
-    error,
-    refetch
-  } = useGetMessagesQuery(channelId);
-  const location = useLocation();
+  // let channel;
+  // if (serverId) {
+  //   const server = currentUser?.joinedServers?.filter((joinedServer) => {
+  //     return joinedServer._id == serverId;
+  //   });
+  //   console.log('サーバー情報：', server);
+  //   if (!server) channel = [];
+  //   else if (server?.length) { 
+  //     channel = server[0]?.ownedChannels?.filter((ownedChannel) => {
+  //       return ownedChannel._id == channelId;
+  //     });
+  //     if (channel?.length) channel = channel[0];
+  //   }
+
+  // } else {
+  //   channel = currentUser?.setDirectMessages?.filter((directMessage) => {
+  //     return directMessage._id == channelId;
+  //   });
+  //   if (channel?.length) channel = channel[0];
+  // }
+  console.log('チャンネル情報：', currentChannel[0]);
+
+  const { data } = useGetMessagesQuery(channelId);
+  const messages = data?.messages;
+  console.log(messages);
   const messageRef = useRef();
   const [ isOpen, setIsOpen ] = useState('');
 
   useEffect(() => {
     if (currentUser) {
-      socket.emit('join_room', channelId);
+      socket.emit('join_room', {
+        channelId, 
+        currentUser,
+      });
     }
     
     return () => {
-      socket.emit('leave_room', channelId);
+      if (currentUser) {
+        socket.emit('leave_room', {
+          channelId,
+          currentUser,
+        });
+      }
     }
   }, [channelId, currentUser]);
 
   useEffect(() => {
-    socket.on('sended_message', (newMessage) => {
-      console.log('==========\n', newMessage, '\n==========');
-      refetch();
-    });
-
-    return () => {
-      socket.off('sended_message');
-    }
-  }, [socket]);
-
-  useEffect(() => {
-    if (messages) {
+    if (messages?.length) {
       const unreadMessages = messages?.filter((message) => {
         let readUserIds = message?.readUsers?.map((user) => {
           return user._id;
@@ -80,9 +88,10 @@ const Chat = () => {
         return !readUserIds.includes(currentUser?._id);
       });
       if (unreadMessages?.length) {
+        console.log('未読メッセージ：', unreadMessages);
         socket.emit('read_messages', {
-          channelId, 
-          currentUserId: currentUser?._id
+          currentChannel: currentChannel[0],
+          currentUser,
         });
       }
     }
@@ -112,13 +121,6 @@ const Chat = () => {
 
     return [ timeFlag, dateFlag, postTime ];
   };
-
-  if (isError) {
-    console.log(error);
-    return (
-      <Navigate to='/login' state={{ referrer: location.pathname }} replace />
-    );
-  }
   
   return (
     <>
@@ -140,15 +142,22 @@ const Chat = () => {
             display='none'
           />
           
-          {channel?.directMessage
-            ? <AtSignIcon boxSize='21px' flex='0 0 auto' m='0 9px' color='#82858f' />
+          {currentChannel[0]?.directMessage
+            ? currentChannel[0]?.category === 'ダイレクトメッセージ'
+              ? <AtSignIcon boxSize='21px' flex='0 0 auto' m='0 9px' color='#82858f' />
+              : <Icon as={MdPeopleAlt} boxSize='24px' flex='0 0 auto' m='0 8px' color='#82858f' />
             : <Icon as={BiHash} boxSize={'28px'} flex='0 0 auto' m='0 8px' color='#82858f' />
           }
           <Heading minW='auto' color='#f3f4f5' 
             fontSize='16px' lineHeight='20px' fontWeight='600'
             overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
           >
-            {channel?.title}
+            {currentChannel[0]?.directMessage
+              ? currentChannel[0]?.category === 'ダイレクトメッセージ'
+                ? friend[0]?.displayName
+                : currentChannel[0]?.title
+              : currentChannel[0]?.title
+            }
           </Heading>
         </Flex>
         
@@ -257,9 +266,9 @@ const Chat = () => {
 
         <ActiveSideBar 
           isOpen={isOpen}
-          header={`メンバー—${channel?.parentServer?.members?.length}`}
-          members={channel?.parentServer?.members}
-          owner={channel?.parentServer?.owner}
+          header={`メンバー—${currentChannel[0]?.allowedUsers?.length}`}
+          members={currentChannel[0]?.allowedUsers}
+          owner={currentChannel[0]?.parentServer?.owner}
         />
       </Flex>
     </>

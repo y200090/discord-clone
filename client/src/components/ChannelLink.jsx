@@ -5,7 +5,7 @@ import { NavLink } from 'react-router-dom'
 import { HiSpeakerWave } from 'react-icons/hi2'
 import { MdPersonAddAlt1 } from 'react-icons/md'
 import { SettingsIcon } from '@chakra-ui/icons'
-import { CreateInvitation } from '../features'
+import { CreateInvitationForm } from '../features'
 
 const ChannelLink = (props) => {
   const { toURL, channelName, category, isAccordionOpen, server } = props;
@@ -70,7 +70,7 @@ const ChannelLink = (props) => {
               <IconButton aria-label='招待を作成'
                 icon={<MdPersonAddAlt1 size={16} />} size={16}
                 bg='transparent' color='#b8b9bf' mr='-4px'
-                zIndex={10}
+                zIndex={5}
                 _hover={{ bg: 'transparent', color: '#dcdde1' }}
                 onClick={(e) => {
                   e.preventDefault();
@@ -93,7 +93,7 @@ const ChannelLink = (props) => {
         </ChakraLink>
       </Box>
 
-      <CreateInvitation {...rest} />
+      <CreateInvitationForm {...rest} />
     </>
   )
 }

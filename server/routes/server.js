@@ -4,14 +4,16 @@ const Server = require('../models/Server');
 const Channel = require('../models/Channel');
 const verify = require('../middleware/verify');
 const Message = require('../models/Message');
+const Invitation = require('../models/Invitation');
+const crypto = require('crypto');
 
 // サーバー作成
 router.post('/create', verify, async (req, res) => {
     const { serverName, photoURL, category, currentUser } = req.body;
 
-    try {
+    try {        
         // サーバーを新規作成
-        let server = await Server.create({
+        let newServer = await Server.create({
             title: serverName,
             photoURL, 
             category,
@@ -22,30 +24,53 @@ router.post('/create', verify, async (req, res) => {
         // カレントユーザーの”参加済みサーバー”配列を更新
         await User.findOneAndUpdate({ _id: currentUser._id }, {
             $addToSet: {
-                joinedServers: server._id
+                joinedServers: newServer._id
             }
         }, { runValidators: true });
 
         // メインテキストチャンネルを作成
         const textChannel = await Channel.create({
             title: '一般',
-            parentServer: server._id,
+            parentServer: newServer._id,
             allowedUsers: [currentUser._id]
         });
 
         // ボイスチャンネルを作成
         const voiceChannel = await Channel.create({
             title: '一般',
-            parentServer: server._id,
+            parentServer: newServer._id,
             category: 'ボイスチャンネル',
             allowedUsers: [currentUser._id]
         });
 
-        // サーバーの”所有チャンネル”配列を更新
-        server.ownedChannels.push(textChannel._id, voiceChannel._id)
-        server = await server.save();
+        // 招待URLを作成
+        let N = 8;
+        let invitationLink = crypto.randomBytes(N).toString('base64').substring(0, N);
+        invitationLink = invitationLink.replace(/\//g, '\\');
 
-        return res.status(200).json(server);
+        await Invitation.create({
+            link: invitationLink,
+            targetServer: newServer._id,
+            sender: currentUser._id,
+        });
+
+        // サーバーの”所有チャンネル”配列を更新
+        newServer.ownedChannels.push(textChannel._id, voiceChannel._id)
+        newServer.invitationLink = invitationLink;
+        newServer = await newServer.save();
+        newServer = await newServer.populate([
+            {path: 'members'},
+            {path: 'ownedChannels', populate: [
+                {path: 'parentServer', populate: [
+                    {path: 'members'},
+                    {path: 'owner'},
+                ]},
+                {path: 'allowedUsers'},
+            ]},
+            {path: 'owner'},
+        ]);
+
+        return res.status(200).json(newServer);
         
     } catch (err) {
         return res.status(500).json(err);
@@ -69,15 +94,29 @@ router.get('/info/:serverId', verify, async (req, res) => {
     }
 });
 
-// router.get('/join/:passcode', async (req, res) => {
-//     const token = req.cookies.access_token;
-//     if (!token) {
-//         return res.redirect('http://localhost:5173/login');
+// router.get('/info/invitation/:invitationLink', verify, async (req, res) => {
+//     const invitationLink = req.params.invitationLink;
+
+//     try {
+//         const server = await Server.findOne({ invitationLink }).populate([ 'members' ]);
+
+//         return res.status(200).json(server);
+        
+//     } catch (err) {
+//         return res.status(500).json(err);
 //     }
-    
-//     const passcode = req.params.passcode;
-//     return res.send(passcode);
 // });
+
+router.get('/join/:invitationLink', async (req, res) => {
+    const token = req.cookies.access_token;
+    console.log(token);
+    const appUrl = process.env.CLIENT_APP_URL;
+    const invitationLink = req.params.invitationLink;
+    res.set({
+        'Invited-Host': '',
+    });
+    return res.redirect(`${appUrl}/invite/${invitationLink}`);
+});
 
 router.post('/join', verify, async (req, res) => {
     const { serverId, currentUserId } = req.body;
@@ -117,26 +156,27 @@ router.post('/join', verify, async (req, res) => {
     }
 })
 
-router.post('/invitation', verify, async (req, res) => {
-    const { link, currentUserId, targetUserId } = req.body;
+// 招待URLを作成・送信
+router.post('/invitation/create', verify, async (req, res) => {
+    const { link, currentUserId, friendId } = req.body;
 
     try {
-        let DM = await Channel.findOne({
+        let newDirectMessage = await Channel.findOne({
             category: 'ダイレクトメッセージ',
             directMessage: true,
             allowedUsers: {
                 $all: [
                     currentUserId,
-                    targetUserId,
+                    friendId,
                 ]
             }
         });
-        if (!DM) {
+        if (!newDirectMessage) {
             return res.status(500).json('DMが存在しません');
         }
 
         let newMessage = await Message.create({
-            postedChannel: DM._id,
+            postedChannel: newDirectMessage._id,
             type: '招待リンク',
             body: link,
             sender: currentUserId,
@@ -149,7 +189,18 @@ router.post('/invitation', verify, async (req, res) => {
             'readUsers',
         ]);
 
-        return res.status(200).json(newMessage);
+        newDirectMessage.latestMessage = newMessage._id;
+        newDirectMessage = await newDirectMessage.save();
+
+        await User.findByIdAndUpdate(currentUserId, {
+            $addToSet: {
+                setDirectMessages: newDirectMessage._id
+            }
+        }, { 
+            runValidators: true 
+        });
+
+        return res.status(200).json({newMessage, newDirectMessage});
         
     } catch (err) {
         return res.status(500).json(err);

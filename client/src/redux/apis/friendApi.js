@@ -1,5 +1,6 @@
 import { socket } from '../../socket';
 import { apiSlice } from '../slices/apiSlice';
+import { setFriendRequests } from '../slices/requestSlice';
 
 export const friendApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
@@ -8,7 +9,53 @@ export const friendApi = apiSlice.injectEndpoints({
                 url: `/friend/request/get/${uid}`,
                 method: 'GET',
             }),
-            providesTags: ['Friend']
+            // providesTags: ['Friend'],
+            // async onQueryStarted(
+            //     arg, 
+            //     { dispatch, queryFulfilled }
+            // ) {
+            //     try {
+            //         const { data } = await queryFulfilled;
+            //         console.log(data);
+            //         dispatch(setFriendRequests(data));
+                    
+            //     } catch (err) {
+            //         console.log(err);
+            //     }
+            // }
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    await cacheDataLoaded;
+
+                    socket.on('receive_request', (newRequest) => {
+                        console.log(newRequest);
+                        updateCachedData((draft) => {
+                            draft.push(newRequest);
+                        });
+                    });
+
+                    socket.on('delete_request', (request) => {
+                        console.log(request);
+                        updateCachedData((draft) => {
+                            let index = draft.findIndex((item) => {
+                                return item._id == request._id;
+                            });
+                            draft.splice(index, 1);
+                        });
+                    });
+
+                    await cacheEntryRemoved;
+
+                    socket.off('receive_request');
+                    socket.off('delete_request');
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         PostFriendRequest: builder.mutation({
             query: (body) => ({
@@ -16,16 +63,17 @@ export const friendApi = apiSlice.injectEndpoints({
                 method: 'POST',
                 body,
             }), 
-            invalidatesTags: ['Friend'],
+            // invalidatesTags: ['Friend'],
             async onCacheEntryAdded(
                 arg,
                 { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
             ) {
                 try {
                     const result = await cacheDataLoaded;
+                    console.log(result)
 
                     if (result?.data) {
-                        socket.emit('send_request', result.data.targetUserId);
+                        socket.emit('send_request', result.data.request);
                     }
                     
                     await cacheEntryRemoved;
@@ -35,21 +83,53 @@ export const friendApi = apiSlice.injectEndpoints({
                 }
             }
         }),
-        ApprovalFriendRequest: builder.mutation({
+        ApproveFriendRequest: builder.mutation({
             query: (body) => ({
-                url: '/friend/request/approval',
+                url: '/friend/approve/friend-request',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['Friend', 'User']
+            // invalidatesTags: ['Friend', 'User']
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    const { data } = await cacheDataLoaded;
+                    console.log(data)
+
+                    socket.emit('approve_request', data);
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
-        DenialFriendRequest: builder.mutation({
+        DiscardFriendRequest: builder.mutation({
             query: (body) => ({
-                url: '/friend/request/denial',
+                url: '/friend/discard/friend-request',
                 method: 'POST',
                 body,
             }),
-            invalidatesTags: ['Friend', 'User']
+            // invalidatesTags: ['Friend', 'User']
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    const { data } = await cacheDataLoaded;
+                    console.log(data)
+
+                    socket.emit('discard_request', data);
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         DeleteFriend: builder.mutation({
             query: (body) => ({
@@ -57,7 +137,7 @@ export const friendApi = apiSlice.injectEndpoints({
                 method: 'POST',
                 body
             }),
-            invalidatesTags: ['User'],
+            // invalidatesTags: ['User'],
             async onCacheEntryAdded(
                 arg,
                 { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
@@ -65,9 +145,8 @@ export const friendApi = apiSlice.injectEndpoints({
                 try {
                     await cacheDataLoaded;
 
-                    if (arg?.targetUser) {
-                        socket.emit('delete_friend', arg?.targetUser);
-                    }
+                    console.log(arg);
+                    socket.emit('delete_friend', arg.friend);
                     
                     await cacheEntryRemoved;
                     
@@ -82,7 +161,7 @@ export const friendApi = apiSlice.injectEndpoints({
 export const { 
     useGetFriendRequestsQuery, 
     usePostFriendRequestMutation, 
-    useApprovalFriendRequestMutation,
-    useDenialFriendRequestMutation,
+    useApproveFriendRequestMutation,
+    useDiscardFriendRequestMutation,
     useDeleteFriendMutation
 } = friendApi;

@@ -6,6 +6,7 @@ import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logout as logoutUser } from '../../redux/slices/authSlice';
 import { socket } from '../../socket';
+import { apiSlice } from '../../redux/slices/apiSlice';
 
 const Logout = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -17,6 +18,7 @@ const Logout = () => {
     try {
       await logout().unwrap();
       dispatch(logoutUser());
+      dispatch(apiSlice.util.resetApiState());
       socket.disconnect();
       navigate('/');
       

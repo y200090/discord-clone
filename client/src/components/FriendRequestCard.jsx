@@ -3,29 +3,29 @@ import { Avatar, Box, ButtonGroup, Flex, IconButton, Text, Tooltip } from '@chak
 import React from 'react'
 import { FaDiscord } from 'react-icons/fa';
 import { FiCheck } from 'react-icons/fi';
-import { useApprovalFriendRequestMutation, useDenialFriendRequestMutation } from '../redux/apis/friendApi'
+import { useApproveFriendRequestMutation, useDiscardFriendRequestMutation } from '../redux/apis/friendApi'
 import { socket } from '../socket';
 
 const FriendRequestCard = ({ request, user, status }) => {
-  const [ ApprovalFriendRequest ] = useApprovalFriendRequestMutation();
-  const [ DenialFriendRequest ] = useDenialFriendRequestMutation();
+  const [ ApproveFriendRequest ] = useApproveFriendRequestMutation();
+  const [ DiscardFriendRequest ] = useDiscardFriendRequestMutation();
 
-  const handleApproval = async () => {
+  const handleApprove = async () => {
     try {
-      await ApprovalFriendRequest({ request });
+      await ApproveFriendRequest({ request });
 
-      socket.emit('approve_request', request);
+      // socket.emit('approve_request', request);
       
     } catch (err) {
       console.log(err);
     }
   };
 
-  const handleDenial = async () => {
+  const handleDiscard = async () => {
     try {
-      await DenialFriendRequest({ request });
+      await DiscardFriendRequest({ request });
 
-      socket.emit('deny_request', user._id);
+      // socket.emit('discard_request', request);
       
     } catch (err) {
       console.log(err);
@@ -40,6 +40,12 @@ const FriendRequestCard = ({ request, user, status }) => {
           bg: '#393c41', 
           borderColor: '#393c41',
           cursor: 'pointer',
+          'div > div > div > div > span:last-of-type': {
+            opacity: '1',
+          },
+          'div > div > button': {
+            bg: '#1d1e21',
+          },
           '.margin-bg': { bg: '#393c41' }
         }}
       >
@@ -57,14 +63,24 @@ const FriendRequestCard = ({ request, user, status }) => {
               />
             </Box>
             <Flex direction='column' justify='center'>
-              <Box color='#f2f3f5'
-                fontSize='16px' lineHeight='20px' fontWeight='600'
-                overflow='hidden' 
-                whiteSpace='nowrap' 
-                textOverflow='ellipsis'
-              >
-                {user?.displayName}
-              </Box>
+              <Flex align='flex-end' lineHeight='1.1'>
+                <Box as={'span'} color='#f2f3f5'
+                  fontSize='16px' fontWeight='600'
+                  overflow='hidden' 
+                  whiteSpace='nowrap' 
+                  textOverflow='ellipsis'
+                >
+                  {user?.displayName}
+                </Box>
+                <Text as={'span'} color='#b5bac1' opacity={0}
+                  fontSize='14px' lineHeight='16px' fontWeight='500'
+                  overflow='hidden' 
+                  whiteSpace='nowrap' 
+                  textOverflow='ellipsis'
+                >
+                  {user?.tag?.replace(user?.displayName, '')}
+                </Text>
+              </Flex>
               <Text color='#b5bac1'
                 fontSize='14px' lineHeight='20px'
                 overflow='hidden'
@@ -89,7 +105,7 @@ const FriendRequestCard = ({ request, user, status }) => {
                 minW='36px' bg='#2b2d31' color='#b5bac1'
                 borderRadius='50%'
                 _hover={{ bg: '#2b2d31', color: '#23a559' }}
-                onClick={handleApproval}
+                onClick={handleApprove}
                 {...(status === 'from' && {display: 'none'}
                 )}
               />
@@ -106,7 +122,7 @@ const FriendRequestCard = ({ request, user, status }) => {
                 minW='36px' bg='#2b2d31' color='#b5bac1'
                 borderRadius='50%'
                 _hover={{ bg: '#2b2d31', color: '#f23f42' }}
-                onClick={handleDenial}
+                onClick={handleDiscard}
               />
             </Tooltip>
           </ButtonGroup>

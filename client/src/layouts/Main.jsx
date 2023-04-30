@@ -8,10 +8,22 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import CreateDirectMessage from '../features/modals/CreateDirectMessage'
 import { DirectMessageLink, SkeletonBox, StatusPanel } from '../components'
+import { selectParticipatingChannels } from '../redux/slices/channelSlice'
 
 const Main = () => {
   const currentUser = useSelector(selectCurrentUser);
-  const directMessages = currentUser?.setDirectMessages;
+  console.log(currentUser)
+  const participatingChannels = useSelector(selectParticipatingChannels);
+  const dmIds = currentUser?.setDirectMessages?.map((dm) => {
+    return dm._id;
+  });
+  // const directMessages = currentUser?.setDirectMessages;
+  const directMessages = participatingChannels.filter((channel) => {
+
+    return dmIds?.includes(channel._id);
+  });
+  console.log(directMessages);
+  // const directMessages = currentUser?.setDirectMessages;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { 
     isOpen: isOpen, 
@@ -106,34 +118,11 @@ const Main = () => {
 
             <Flex as={'ul'} flexDirection='column'>
               {directMessages?.length
-                ? directMessages?.map((dm) => {
-                    const friend = dm.allowedUsers.filter((friend) => {
-                      return friend._id !== currentUser?._id;
-                    });
-
-                    const notifications = dm.notifications.filter((notification) => {
-                      return notification.recipient._id === currentUser._id;
-                    });
-
+                ? directMessages?.map((directMessage) => {
                     return (
-                      <DirectMessageLink key={dm._id} 
-                        toURL={dm._id}
+                      <DirectMessageLink key={directMessage._id} 
+                        directMessage={directMessage}
                         currentUser={currentUser}
-                        notifications={notifications}
-                        {...(dm.category === 'ダイレクトメッセージ'
-                          ? {
-                            photoURL: friend[0].photoURL,
-                            title: friend[0].displayName,
-                            color: friend[0].color,
-                            status: friend[0].online ? 'オンライン' : 'オフライン'
-                          }
-                          : {
-                            groupDM: true,
-                            title: dm.title,
-                            color: dm.color,
-                            status: `${dm.allowedUsers.length}人のメンバー`
-                          }
-                        )}
                       />
                     )
                   })

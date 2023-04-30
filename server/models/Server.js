@@ -33,6 +33,10 @@ const ServerSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     },
+    invitationLink: {
+        type: 'String',
+        default: ''
+    }
 }, { 
     timestamps: true 
 });

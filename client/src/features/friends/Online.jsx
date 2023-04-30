@@ -68,8 +68,7 @@ const Online = ({ currentUser }) => {
         </Heading>
       </Box>
 
-      <Box flex='1 1 auto' mt='8px' pb='8px'
-        overflow='hidden scroll'
+      <Box flex='1 1 auto' mt='8px' pb='8px' overflow='hidden scroll'
         css={css`
           &::-webkit-scrollbar {
             width: 16px;

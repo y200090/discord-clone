@@ -9,7 +9,7 @@ export { default as ShowAll } from './friends/ShowAll'
 
 export { default as CreateChannel } from './modals/CreateChannel'
 export { default as CreateDirectMessage } from './modals/CreateDirectMessage'
-export { default as CreateInvitation } from './modals/CreateInvitation'
+export { default as CreateInvitationForm } from './modals/CreateInvitationForm'
 export { default as CreateServer } from './modals/CreateServer';
 
 export { default as Logout } from './settings/Logout'

@@ -9,16 +9,16 @@ export const messageApi = apiSlice.injectEndpoints({
         method: 'POST',
         body
       }),
-      invalidatesTags: ['Message'],
+      // invalidatesTags: ['Message'],
       async onCacheEntryAdded(
         arg, 
         { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
       ) {
         try {
-          const newMessage = await cacheDataLoaded;
+          const { data: newMessage } = await cacheDataLoaded;
           console.log('新しいメッセージ: ', newMessage)
 
-          socket.emit('send_message', newMessage.data);
+          socket.emit('send_message', newMessage);
           
           await cacheEntryRemoved;
 
@@ -32,28 +32,31 @@ export const messageApi = apiSlice.injectEndpoints({
           url: `/message/history/${channelId}`,
           method: 'GET'
       }),
-      providesTags: ['Message'],
-      // async onCacheEntryAdded(
-      //   arg,
-      //   { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
-      // ) {
-      //   try {
-      //     await cacheDataLoaded;
+      // providesTags: ['Message'],
+      async onCacheEntryAdded(
+        arg,
+        { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+      ) {
+        try {
+          const { data } = await cacheDataLoaded;
 
-      //     socket.on('send_message', (newMessage) => {
-      //       updateCachedData((draft) => {
-      //         draft.push(newMessage);
-      //       });
-      //     });
+          socket.on('message_sent', (newMessage) => {
+            console.log(newMessage)
+            updateCachedData((draft) => {
+              if (data.currentChannelId == newMessage.postedChannel._id) {
+                draft.messages.push(newMessage);
+              }
+            });
+          });
 
-      //     await cacheEntryRemoved;
+          await cacheEntryRemoved;
 
-      //     socket.off('send_message');
+          socket.off('message_sent');
           
-      //   } catch (err) {
-      //     console.log(err);
-      //   }
-      // }
+        } catch (err) {
+          console.log(err);
+        }
+      }
     })
   })
 });

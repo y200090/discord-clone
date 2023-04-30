@@ -5,32 +5,30 @@ import { FaDiscord } from 'react-icons/fa';
 import { SlClose } from 'react-icons/sl';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { useAppendDirectMessageMutation, useGroupDirectMessageCreationMutation } from '../../redux/apis/channelApi';
+import { useAddDirectMessageMutation, useCreateGroupDirectMessageMutation } from '../../redux/apis/channelApi';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
 
 const CreateDirectMessage = ({ isOpen, onClose }) => {
   const currentUser = useSelector(selectCurrentUser);
-  // const friends = Object.keys(currentUser).length === 0
-  //   ? []
-  //   : currentUser.friends;
-  const friends = currentUser?.friends == null 
-    ? []
-    : currentUser?.friends;
-  const [ AppendDirectMessage ] = useAppendDirectMessageMutation();
-  const [ GroupDirectMessageCreation ] = useGroupDirectMessageCreationMutation()
+  const friends = currentUser?.friends;
+  const [ AddDirectMessage ] = useAddDirectMessageMutation();
+  const [ CreateGroupDirectMessage ] = useCreateGroupDirectMessageMutation()
   const navigate = useNavigate();
   const [ targetUsers, setTargetUsers ] = useState([]);
 
   const changeSelectUser = (e) => {
+    const targetUser = friends[e.target.value];
     if (!e.target.checked) {
       setTargetUsers(
-        targetUsers.filter((userId) => (userId !== e.target.value))
+        targetUsers.filter((user) => (user._id !== targetUser?._id))
       );
 
     } else {
-      setTargetUsers([...targetUsers, e.target.value]);
+      setTargetUsers([...targetUsers, targetUser]);
     }
   };
+
+  console.log(targetUsers);
 
   const handleCreateDM = async (e) => {
     e.preventDefault();
@@ -38,15 +36,15 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
     try {
       let channel;
       if (targetUsers.length >= 2) {
-        channel = await GroupDirectMessageCreation({
+        channel = await CreateGroupDirectMessage({
           currentUser,
           targetUsers
         }).unwrap();
 
       } else {
-        channel = await AppendDirectMessage({
+        channel = await AddDirectMessage({
           currentUserId: currentUser._id,
-          targetUserId: targetUsers[0]._id
+          friendId: targetUsers[0]._id
         }).unwrap();
       }
 
@@ -132,75 +130,73 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
               }
             `}
           >
-            {Object.keys(friends).length && 
-              friends.map((user) => (
-                <Flex key={user?._id}
-                  m='0 4px 0 12px' p='1px 0' borderRadius='3px'
-                  _hover={{ bg: '#393c41' }}
+            {friends?.map((friend, index) => (
+              <Flex key={friend?._id}
+                m='0 4px 0 12px' p='1px 0' borderRadius='3px'
+                _hover={{ bg: '#393c41' }}
+              >
+                <FormLabel htmlFor={friend?._id}
+                  h='40px' w='100%' p='6px 8px' m='0'
+                  display='flex' alignItems='center'
+                  cursor='pointer'
                 >
-                  <FormLabel htmlFor={user?._id}
-                   h='40px' w='100%' p='6px 8px' m='0'
-                   display='flex' alignItems='center'
-                   cursor='pointer'
+                  <Avatar boxSize='32px' bg={friend.color}
+                    flexShrink='0' m='0'
+                    {...(friend.photoURL 
+                      ? {src: friend.photoURL}
+                      : {icon: <FaDiscord />}
+                    )}
                   >
-                    <Avatar boxSize='32px' bg={user.color}
-                      flexShrink='0' m='0'
-                      {...(user.photoURL 
-                        ? {src: user.photoURL}
-                        : {icon: <FaDiscord />}
-                      )}
-                    >
-                      <AvatarBadge  boxSize='16px'
-                        bg='#23a55a' borderColor='#2b2d31'
-                      />
-                    </Avatar>
-
-                    <Flex align='center' flex='1 1 auto' m='0 10px'>
-                      <Text mr='4px' color='#dbdee1' 
-                        fontSize='16px' fontWeight='500' lineHeight='20px'
-                      >
-                        {user?.displayName}
-                      </Text>
-                      <Text color='#8b929b'
-                        fontSize='14px' 
-                        fontWeight='400' 
-                        lineHeight='1.1'
-                      >
-                        {user?.tag}
-                      </Text>
-                    </Flex>
-
-                    <Checkbox id={user?._id} value={user} 
-                      h='22px' w='22px'
-                      css={css`
-                        span {
-                          height: 22px;
-                          width: 22px;
-                          border-width: 1px;
-                          border-color: #696b74;
-                          border-radius: 6px;
-                        }
-                        span[data-checked] {
-                          background-color: transparent;
-                          border-color: #949cf7;
-                          div > svg {
-                            color: #5865f2;
-                          }
-                        }
-                        span[data-checked]:hover {
-                          background-color: transparent;
-                          border-color: #949cf7;
-                        }
-                        span[data-focus-visible] {
-                          box-shadow: none;
-                        }
-                      `}
-                      onChange={changeSelectUser}
+                    <AvatarBadge  boxSize='16px'
+                      bg='#23a55a' borderColor='#2b2d31'
                     />
-                  </FormLabel>
-                </Flex>
-              ))
-            }
+                  </Avatar>
+
+                  <Flex align='center' flex='1 1 auto' m='0 10px'>
+                    <Text mr='4px' color='#dbdee1' 
+                      fontSize='16px' fontWeight='500' lineHeight='20px'
+                    >
+                      {friend?.displayName}
+                    </Text>
+                    <Text color='#8b929b'
+                      fontSize='14px' 
+                      fontWeight='400' 
+                      lineHeight='1.1'
+                    >
+                      {friend?.tag}
+                    </Text>
+                  </Flex>
+
+                  <Checkbox id={friend?._id} value={index} 
+                    h='22px' w='22px'
+                    css={css`
+                      span {
+                        height: 22px;
+                        width: 22px;
+                        border-width: 1px;
+                        border-color: #696b74;
+                        border-radius: 6px;
+                      }
+                      span[data-checked] {
+                        background-color: transparent;
+                        border-color: #949cf7;
+                        div > svg {
+                          color: #5865f2;
+                        }
+                      }
+                      span[data-checked]:hover {
+                        background-color: transparent;
+                        border-color: #949cf7;
+                      }
+                      span[data-focus-visible] {
+                        box-shadow: none;
+                      }
+                    `}
+                    onChange={changeSelectUser}
+                  />
+                </FormLabel>
+              </Flex>
+            ))}
           </Box>
 
           <Box h='1px' w='auto' m='0 10px' bg='#36383d' boxShadow='0 -1px 0 #33353a' />

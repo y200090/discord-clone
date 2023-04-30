@@ -6,14 +6,14 @@ const verify = require('../middleware/verify');
 const Message = require('../models/Message');
 
 // フレンド申請一覧取得
-router.get('/request/get/:uid', verify, async (req, res) => {
-    const uid = req.params.uid;
+router.get('/request/get/:userId', verify, async (req, res) => {
+    const userId = req.params.userId;
 
     try {
         const requests = await FriendRequest.find({
             $or: [
-                { to: uid },
-                { from: uid }
+                { to: userId },
+                { from: userId }
             ]
         }).populate([
             {path: 'from'},
@@ -29,30 +29,34 @@ router.get('/request/get/:uid', verify, async (req, res) => {
 
 // フレンド申請送信
 router.post('/request/post', verify, async (req, res) => {
-    const { currentUser, targetTag } = req.body;
+    const { currentUserId, targetUserTag } = req.body;
 
     try {
-        const targetUser = await User.findOne({ tag: targetTag });
+        const targetUser = await User.findOne({ tag: targetUserTag });
         if (!targetUser) {
             return res.status(400).json('フレンドリクエストに失敗しました');
         }
 
         const alreadyFlag = await FriendRequest.findOne({
             to: targetUser._id,
-            from: currentUser._id
+            from: currentUserId
         });
         if (alreadyFlag) {
             return res.status(400).json('既にフレンドリクエストを送信しています。');
         }
 
-        await FriendRequest.create({
+        let newFriendRequest = await FriendRequest.create({
             to: targetUser._id,
-            from: currentUser._id
+            from: currentUserId
         });
 
+        newFriendRequest = await newFriendRequest.populate([
+            'to', 'from',
+        ]);
+
         return res.status(200).json({
-            message: `成功です！${targetTag}さんにフレンドリクエストを送信しました。`,
-            targetUserId: targetUser._id
+            message: `成功です！${targetUserTag}さんにフレンドリクエストを送信しました。`,
+            request: newFriendRequest,
         });
         
     } catch (err) {
@@ -61,25 +65,29 @@ router.post('/request/post', verify, async (req, res) => {
 });
 
 // フレンド申請承諾
-router.post('/request/approval', verify, async (req, res) => {
+router.post('/approve/friend-request', verify, async (req, res) => {
     const { request } = req.body;
 
     try {
         await FriendRequest.findByIdAndDelete(request._id);
 
-        await User.findOneAndUpdate({ _id: request.to._id }, {
+        await User.findByIdAndUpdate(request.to._id, {
             $push: {
                 friends: request.from._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
-        await User.findOneAndUpdate({ _id: request.from._id }, {
+        await User.findByIdAndUpdate(request.from._id, {
             $push: {
                 friends: request.to._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
-        await Channel.create({
+        let newDirectMessage = await Channel.create({
             category: 'ダイレクトメッセージ',
             allowedUsers: [
                 request.to._id,
@@ -88,7 +96,12 @@ router.post('/request/approval', verify, async (req, res) => {
             directMessage: true,
         });
 
-        return res.status(200).json('フレンド申請を承諾しました');
+        newDirectMessage = await newDirectMessage.populate([
+            {path: 'allowedUsers'},
+            {path: 'notifications'}
+        ]);
+
+        return res.status(200).json({request, newDirectMessage});
         
     } catch (err) {
         return res.status(500).json(err);
@@ -96,13 +109,13 @@ router.post('/request/approval', verify, async (req, res) => {
 });
 
 // フレンド申請削除
-router.post('/request/denial', verify, async (req, res) => {
+router.post('/discard/friend-request', verify, async (req, res) => {
     const { request } = req.body;
 
     try {
         await FriendRequest.findByIdAndDelete(request._id);
 
-        return res.status(200).json('フレンド申請を削除しました');
+        return res.status(200).json(request);
         
     } catch (err) {
         return res.status(500).json(err);
@@ -111,20 +124,24 @@ router.post('/request/denial', verify, async (req, res) => {
 
 // フレンド削除
 router.post('/delete', verify, async (req, res) => {
-    const { currentUser, targetUser } = req.body;
+    const { currentUser, friend } = req.body;
 
     try {
-        await User.findOneAndUpdate({ _id: currentUser._id }, {
+        await User.findByIdAndUpdate(currentUser._id, {
             $pull: {
-                friends: targetUser._id
+                friends: friend._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
-        await User.findOneAndUpdate({ _id: targetUser._id }, {
+        await User.findByIdAndUpdate(friend._id, {
             $pull: {
                 friends: currentUser._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
         const deleteChannel = await Channel.findOneAndDelete({
             category: 'ダイレクトメッセージ',
@@ -132,14 +149,14 @@ router.post('/delete', verify, async (req, res) => {
             allowedUsers: {
                 $all: [
                     currentUser._id,
-                    targetUser._id
+                    friend._id
                 ]
             }
         });
 
-        await Message.deleteMany({ postedChannel: deleteChannel._id })
+        await Message.deleteMany({ postedChannel: deleteChannel._id });
 
-        return res.status(200).json(`${targetUser.displayName}さんをフレンドから削除しました`);
+        return res.status(200).json(`${friend.displayName}さんをフレンドから削除しました`);
         
     } catch (err) {
         return res.status(500).json(err);

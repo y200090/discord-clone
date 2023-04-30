@@ -88,12 +88,12 @@ router.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email }).populate(['friends', 'setDirectMessages', 'joinedServers']);
         if (!user) {
-            return res.status(401).json('ユーザーが存在しません');
+            return res.status(401).json('ログインまたはパスワードが無効です。');
         }
 
         const validatePassword = await bcrypt.compare(password, user.password);
         if (!validatePassword) {
-            return res.status(401).json('パスワードが間違っています');
+            return res.status(401).json('ログインまたはパスワードが無効です。');
         }
 
         if (user && validatePassword) {

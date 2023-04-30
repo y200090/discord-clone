@@ -17,7 +17,7 @@ const Login = () => {
   const location = useLocation();
   const dispatch = useDispatch();
   const [ cookies ] = useCookies(['logged_in']);
-  const [ login ] = useLoginMutation();
+  const [ login, { isError, error } ] = useLoginMutation();
   const {
     register, 
     handleSubmit, 
@@ -40,7 +40,7 @@ const Login = () => {
       navigate(location?.state?.referrer || '/channels/@me');
       
     } catch (err) {
-      console.log(err?.data);
+      console.log(err);
     }
   };
 
@@ -93,23 +93,25 @@ const Login = () => {
           </VStack>
 
           <Box w='100%'>
-            <FormControl mb='20px' isInvalid={errors.email}>
+            <FormControl mb='20px' isInvalid={errors.email || isError}>
               <FormLabel htmlFor='email'
                 fontSize='12px' lineHeight='16px' fontWeight='700'
                 display='flex' alignItems='center'
               >
-                {errors.email 
+                {errors.email || isError
                   ? <Text color='#fa777b'>メールアドレス</Text>
                   : <Text color='#b8b9bf'>メールアドレス</Text>
                 }
 
                 <RequiredStar>
-                  {errors.email ? 
-                    <FormErrorMessage color='#fa777b' m='0'
-                      fontSize='12px' lineHeight='16px' fontWeight='500'
-                    >
-                      - {errors.email.message}
-                    </FormErrorMessage>
+                  {errors.email || isError
+                    ? (
+                      <FormErrorMessage color='#fa777b' m='0' 
+                        fontSize='12px' lineHeight='16px' fontWeight='500'
+                      >
+                        - {errors?.email?.message || error?.data}
+                      </FormErrorMessage>
+                    )
                     : '*'
                   }
                 </RequiredStar>
@@ -124,43 +126,38 @@ const Login = () => {
               />
             </FormControl>
 
-            <FormControl isInvalid={errors.password}>
-              <FormLabel 
-                fontSize='12px'
-                lineHeight='16px'
-                fontWeight='700'
-                display='flex'
-                alignItems='center'
-                htmlFor='password'
+            <FormControl isInvalid={errors.password || isError}>
+              <FormLabel htmlFor='password'
+                fontSize='12px' lineHeight='16px' fontWeight='700'
+                display='flex' alignItems='center'
               >
-                {errors.password 
+                {errors.password || isError
                   ? <Text color='#fa777b'>パスワード</Text>
                   : <Text color='#b8b9bf'>パスワード</Text>
                 }
 
                 <RequiredStar>
-                  {errors.password ? 
-                    <FormErrorMessage
-                      color='#fa777b'
-                      fontSize='12px'
-                      lineHeight='16px'
-                      fontWeight='500'
-                      m='0'
-                    >
-                      - {errors.password.message}
-                    </FormErrorMessage>
+                  {errors.password || isError
+                    ? (
+                      <FormErrorMessage
+                        color='#fa777b'
+                        fontSize='12px'
+                        lineHeight='16px'
+                        fontWeight='500'
+                        m='0'
+                      >
+                        - {errors?.password?.message || error?.data}
+                      </FormErrorMessage>
+                    )
                     : '*'
                   }
                 </RequiredStar>
               </FormLabel>
 
               <InputGroup>
-                <Input 
+                <Input id='password' 
                   type={isRevealPassword ? 'text' : 'password'} 
-                  id='password' 
-                  bg='#1e1f22' 
-                  color='#dbdce0'
-                  border='none' 
+                  bg='#1e1f22' color='#dbdce0' border='none' 
                   focusBorderColor='transparent'
                   errorBorderColor='transparent'
                   borderRadius='4px'
@@ -180,10 +177,8 @@ const Login = () => {
                 </InputRightElement>
               </InputGroup>
 
-              <Button
-                variant='link'
-                color='#00aafc' 
-                mt='6px'
+              <Button variant='link'
+                color='#00aafc' mt='6px'
               >
                 <Text fontSize='14px' lineHeight='16px' fontWeight='400'>
                   パスワードをお忘れですか？
@@ -192,13 +187,10 @@ const Login = () => {
             </FormControl>
             
             <Box w='100%' mt='20px'>
-              <Button 
-                type='submit'
-                w='100%'
-                bg='#5865f2'
-                _hover={{backgroundColor: '#4752c4'}}
-                borderRadius='4px'
-                mb='8px'
+              <Button type='submit'
+                w='100%' mb='8px'
+                bg='#5865f2' borderRadius='4px'
+                _hover={{bg: '#4752c4'}}
                 isLoading={isSubmitting}
                 isDisabled={errors.email || errors.password}
               >

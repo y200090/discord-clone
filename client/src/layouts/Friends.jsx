@@ -1,43 +1,27 @@
 import { Box, Flex, TabList, Tabs, Text, Icon, Tab, TabPanels, TabPanel } from '@chakra-ui/react'
 import { css } from '@emotion/react'
-import React, { useEffect } from 'react'
+import React from 'react'
 import { BsPersonCheckFill } from 'react-icons/bs'
 import { useSelector } from 'react-redux'
-import { Navigate, useLocation } from 'react-router-dom'
 import { AddToFriend, Blocking, Online, Pending, ShowAll } from '../features'
-import { useGetFriendRequestsQuery } from '../redux/apis/friendApi'
 import { selectCurrentUser } from '../redux/slices/userSlice'
-import { socket } from '../socket'
-import { selectCredential } from '../redux/slices/authSlice'
+import { selectFriendRequests } from '../redux/slices/requestSlice'
 
 const Friends = () => {
   const currentUser = useSelector(selectCurrentUser);
-  const credential = useSelector(selectCredential);
-  console.log(currentUser)
-  const { 
-    data: friendRequests,
-    isError,
-    refetch
-  } = useGetFriendRequestsQuery(credential);
-  const location = useLocation();
+  const friendRequests = useSelector(selectFriendRequests);
   const friendItems = ['オンライン', '全て表示', '保留中', 'ブロック中', 'フレンドに追加'];
   
-  useEffect(() => {
-    socket.on('update_request', (message) => {
-      console.log('==========\n', message, '\n==========');
-      refetch();
-    });
+  // useEffect(() => {
+  //   socket.on('update_request', (message) => {
+  //     console.log('==========\n', message, '\n==========');
+  //     // refetch();
+  //   });
 
-    return () => {
-      socket.off('update_request');
-    }
-  }, [socket]);
-  
-  if (isError) {
-    return (
-      <Navigate to='/login' state={{ referrer: location.pathname }} replace />
-    );
-  }
+  //   return () => {
+  //     socket.off('update_request');
+  //   }
+  // }, [socket]);
   
   return (
     <>

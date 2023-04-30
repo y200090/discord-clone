@@ -1,3 +1,4 @@
+import { socket } from "../../socket";
 import { apiSlice } from "../slices/apiSlice";
 import { setCredential } from "../slices/authSlice";
 
@@ -34,9 +35,11 @@ export const authApi = apiSlice.injectEndpoints({
                 arg,
                 { dispatch, queryFulfilled }
             ) {
+                
                 try {
                     const { data } = await queryFulfilled;
                     dispatch(setCredential(data));
+                    // socket.connect();
                     
                 } catch (err) {
                     console.log(err);

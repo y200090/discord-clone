@@ -1,6 +1,7 @@
 import { Avatar, Box, Flex, Text } from '@chakra-ui/react'
 import React from 'react'
 import { FaDiscord } from 'react-icons/fa'
+import InvitationLink from './InvitationLink';
 
 const MessageBox = ({ message, dateFlag }) => {
   const createdAt = new Date(message.createdAt);
@@ -25,24 +26,28 @@ const MessageBox = ({ message, dateFlag }) => {
         }}
       >
         {dateFlag
-          ? <Text as={'span'} w='40px' textAlign='end'
+          ? (
+            <Text as={'span'} w='40px' textAlign='end' mb='auto'
               color='#949ba4' opacity={0}
               fontSize='0.6875rem' lineHeight='1.375rem'
             >
               {postDate}
             </Text>
-          : <Avatar boxSize='40px'
+          )
+          : (
+            <Avatar boxSize='40px' m='calc(4px - 0.125rem) 0 auto'
               {...(message.sender.photoURL
                 ? {src: message.sender.photoURL}
                 : {
-                    icon: <FaDiscord size='26px' />,
-                    bg: message.sender.color
-                  }
+                  icon: <FaDiscord size='26px' />,
+                  bg: message.sender.color
+                }
               )}
             />
+          )
         }
 
-        <Box pl='15px'>
+        <Box pl='15px' flex='1 1 auto'>
           <Box as={'h3'} maxH='1.375rem' 
             lineHeight='1.375rem' whiteSpace='break-spaces'
             display={dateFlag && 'none'}
@@ -60,15 +65,11 @@ const MessageBox = ({ message, dateFlag }) => {
               {(today ? '今日' : postTime) + postDate}
             </Text>
           </Box>
-          <Text as={'div'} color='#dbdee1'
+          <Text as={'div'} color='#dbdee1' 
             fontSize='1rem' lineHeight='1.375rem' whiteSpace='break-spaces'
           >
             {message.type === '招待リンク'
-              ? (
-                <Box>
-                  {message.body}
-                </Box>
-              )
+              ? <InvitationLink message={message} />
               : message.body
             }
           </Text>

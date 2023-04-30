@@ -53,9 +53,31 @@ router.get('/info/:channelId', verify, async (req, res) => {
     }
 });
 
+router.get('/participating-channels/:userId', verify, async (req, res) => {
+    const userId = req.params.userId;
+
+    try {
+        const participatingChannels = await Channel.find({
+            allowedUsers: userId,
+        }).populate([
+            {path: 'parentServer', populate: [
+                {path: 'members'},
+                {path: 'owner'},
+            ]},
+            {path: 'allowedUsers'},
+            {path: 'latestMessage'}
+        ]);
+
+        return res.status(200).json(participatingChannels);
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
+
 // DMをセットに加える
-router.post('/DM/append', verify, async (req, res) => {
-    const { currentUserId, targetUserId } = req.body;
+router.post('/add/direct-message', verify, async (req, res) => {
+    const { currentUserId, friendId } = req.body;
 
     try {
         const DM = await Channel.findOne({
@@ -64,19 +86,21 @@ router.post('/DM/append', verify, async (req, res) => {
             allowedUsers: {
                 $all: [
                     currentUserId,
-                    targetUserId
+                    friendId
                 ]
             }
-        });
+        }).populate(['allowedUsers']);
         if (!DM) {
             return res.status(500).json('DMが存在しません');
         }
 
-        await User.findOneAndUpdate({ _id: currentUserId }, {
+        await User.findByIdAndUpdate(currentUserId, {
             $addToSet: {
                 setDirectMessages: DM._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
         
         return res.status(200).json(DM);
         
@@ -86,22 +110,24 @@ router.post('/DM/append', verify, async (req, res) => {
 });
 
 // DMをセットから外す
-router.post('/DM/remove', verify, async (req, res) => {
+router.post('/remove/direct-message', verify, async (req, res) => {
     const { currentUserId, directMessageId } = req.body;
 
     try {
-        await User.findOneAndUpdate({ _id: currentUserId }, {
+        await User.findByIdAndUpdate(currentUserId, {
             $pull: {
                 setDirectMessages: directMessageId
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
-        return res.status(200).json('DMを除外しました');
+        return res.status(200).json(directMessageId);
         
     } catch (err) {
         return res.status(500).json(err);
     }
-})
+});
 
 // グループDM作成
 router.post('/groupDM/create', verify, async (req, res) => {
@@ -118,8 +144,8 @@ router.post('/groupDM/create', verify, async (req, res) => {
             return user.displayName;
         });
 
-        const newGroupDM = await Channel.create({
-            title: `${currentUser.displayName}+${{...targetUserDisplayNames}}`,
+        let newGroupDM = await Channel.create({
+            title: `${currentUser.displayName}, ${targetUserDisplayNames.join(', ')}`,
             category: 'グループダイレクトメッセージ',
             directMessage: true,
             allowedUsers: [
@@ -129,6 +155,8 @@ router.post('/groupDM/create', verify, async (req, res) => {
             color: colorCode
         });
 
+        newGroupDM = await newGroupDM.populate(['allowedUsers']);
+        
         // await User.findOneAndUpdate({ _id: currentUser._id }, {
         //     $addToSet: {
         //         setDirectMessages: newGroupDM._id
@@ -146,9 +174,33 @@ router.post('/groupDM/create', verify, async (req, res) => {
             $addToSet: {
                 setDirectMessages: newGroupDM._id
             }
-        }, { runValidators: true });
+        }, { 
+            runValidators: true 
+        });
 
         return res.status(200).json(newGroupDM);
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
+
+router.post('/withdraw', verify, async (req, res) => {
+    const { channelId, currentUserId } = req.body;
+    
+    try {
+        // let currentChannel = await Channel.findById(channelId);
+
+        let targetChannel = await Channel.findByIdAndUpdate(channelId, {
+            $pull: {
+                allowedUsers: currentUserId,
+            },
+        }, {
+            runValidators: true,
+            new: true,
+        });
+
+        return res.status(200).json(targetChannel);
         
     } catch (err) {
         return res.status(500).json(err);

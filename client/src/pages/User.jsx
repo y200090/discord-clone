@@ -8,39 +8,41 @@ import { selectCredential } from '../redux/slices/authSlice'
 import { NavBar } from '../layouts'
 
 const User = () => {
-  const credential = useSelector(selectCredential);
-  const {
-    data, 
-    refetch,
-  } = useGetCurrentUserQuery(credential, {
-    refetchOnFocus: true,
-    refetchOnReconnect: true,
-  });
+  // const credential = useSelector(selectCredential);
+  // const {
+  //   data, 
+  //   refetch,
+  // } = useGetCurrentUserQuery(credential, {
+  //   refetchOnFocus: true,
+  //   refetchOnReconnect: true,
+  // });
 
-  useEffect(() => {
-    socket.connect();
+  // useEffect(() => {
+  //   socket.connect();
 
-    return () => {
-      console.log('unmount!');
-    }
-  }, []);
+  //   return () => {
+  //     console.log('unmount!');
+  //     socket.disconnect();
+  //   }
+  // }, []);
 
-  useEffect(() => {
-    if (data) {
-      socket.emit('online', data);
-    }
-  }, [data]);
+  // useEffect(() => {
+  //   if (data) {
+  //     socket.emit('online', data);
+  //     console.log(data)
+  //   }
+  // }, [data]);
 
-  useEffect(() => {
-    socket.on('new_notices', (message) => {
-      console.log('==========\n', message, '\n==========');
-      refetch();
-    });
+  // useEffect(() => {
+  //   socket.on('new_notices', (message) => {
+  //     console.log('==========\n', message, '\n==========');
+  //     // refetch();
+  //   });
 
-    return () => {
-      socket.off('new_notices');
-    }
-  }, [socket]);
+  //   return () => {
+  //     socket.off('new_notices');
+  //   }
+  // }, [socket]);
 
   return (
     <>

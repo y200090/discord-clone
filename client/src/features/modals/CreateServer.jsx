@@ -12,7 +12,10 @@ import { useForm } from 'react-hook-form';
 import { BiChevronRight } from 'react-icons/bi';
 
 const CreateServer = ({ isOpen, onClose, currentUser }) => {
-  const [ ServerCreation, { isLoading } ] = useServerCreationMutation();
+  const [ ServerCreation, { 
+    isLoading, 
+    isSuccess 
+  } ] = useServerCreationMutation();
   const navigate = useNavigate();
   const {
     register,
@@ -37,6 +40,16 @@ const CreateServer = ({ isOpen, onClose, currentUser }) => {
     setServerName(`${currentUser?.displayName}のサーバー`);
   }, [currentUser, category]);
 
+  useEffect(() => {
+    return () => {
+      setProgress(0);
+      setCategory('');
+      setServerName('');
+      setPhotoURL('');
+      reset();
+    };
+  }, [isOpen]);
+
   const handleUpload = (e) => {
     if (e.target.files[0]) {
       const reader = new FileReader();
@@ -55,7 +68,7 @@ const CreateServer = ({ isOpen, onClose, currentUser }) => {
       console.log(newServer);
       onClose();
       setProgress(0);
-      navigate(`/channels/${newServer._id}/${newServer.ownedChannels[0]}`);
+      navigate(`/channels/${newServer._id}/${newServer.ownedChannels[0]._id}`);
       
     } catch (err) {
       console.log(err?.data);
