@@ -15,7 +15,7 @@ const CreateServer = ({ isOpen, onClose, currentUser }) => {
   const [ ServerCreation, { 
     isLoading, 
     isSuccess 
-  } ] = useServerCreationMutation();
+  }] = useServerCreationMutation();
   const navigate = useNavigate();
   const {
     register,

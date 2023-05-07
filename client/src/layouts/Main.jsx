@@ -6,24 +6,27 @@ import { MdAdd } from 'react-icons/md'
 import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 import { selectCurrentUser } from '../redux/slices/userSlice'
-import CreateDirectMessage from '../features/modals/CreateDirectMessage'
+import CreateDirectMessage from '../features/modals/CreateDirectMessageForm'
 import { DirectMessageLink, SkeletonBox, StatusPanel } from '../components'
 import { selectParticipatingChannels } from '../redux/slices/channelSlice'
+import styled from '@emotion/styled'
+import { selectFriendRequests } from '../redux/slices/requestSlice'
 
 const Main = () => {
   const currentUser = useSelector(selectCurrentUser);
   console.log(currentUser)
+  const friendRequests = useSelector(selectFriendRequests);
+  const postRequests = friendRequests?.filter((request) => {
+    return request?.from?._id !== currentUser?._id;
+  });
   const participatingChannels = useSelector(selectParticipatingChannels);
-  const dmIds = currentUser?.setDirectMessages?.map((dm) => {
+  const directMessageIds = currentUser?.setDirectMessages?.map((dm) => {
     return dm._id;
   });
-  // const directMessages = currentUser?.setDirectMessages;
   const directMessages = participatingChannels.filter((channel) => {
-
-    return dmIds?.includes(channel._id);
+    return directMessageIds?.includes(channel._id);
   });
   console.log(directMessages);
-  // const directMessages = currentUser?.setDirectMessages;
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { 
     isOpen: isOpen, 
@@ -76,7 +79,7 @@ const Main = () => {
               <Button as={NavLink} to='/channels/@me' end
                 leftIcon={<BsPersonCheckFill size={24} />}
                 justifyContent='flex-start' columnGap='4px'
-                h='100%' w='100%'
+                h='100%' w='100%' pr='8px'
                 color='#f3f4f5' bg='transparent'
                 borderRadius='4px'
                 lineHeight='20px' fontWeight='500'
@@ -87,6 +90,9 @@ const Main = () => {
                 }}
               >
                 フレンド
+                {postRequests?.length > 0 && 
+                  <NotificationCounter>{postRequests?.length}</NotificationCounter>
+                }
               </Button>
             </Box>
 
@@ -142,6 +148,23 @@ const Main = () => {
       <CreateDirectMessage {...rest} />
     </>
   )
-}
+};
+
+const NotificationCounter = styled.span`
+  flex: 0 0 auto;
+  min-height: 16px;
+  min-width: 16px;
+  padding-right: 1px;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #fffff3;
+  background-color: #f23f42;
+`
 
 export default Main

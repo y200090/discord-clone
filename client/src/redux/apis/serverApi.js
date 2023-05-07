@@ -34,6 +34,25 @@ export const serverApi = apiSlice.injectEndpoints({
                 body,
             }),
             // invalidatesTags: ['Server', 'User']
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved}
+            ) {
+                try {
+                    const { data } = await cacheDataLoaded;
+                    const newMessage = data?.newMessage;
+                    const currentUser = data?.currentUser;
+                    const server = data?.joiningServer;
+
+                    socket.emit('join_server', {server, currentUser});
+                    socket.emit('send_message', newMessage);
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         CreateInvitation: builder.mutation({
             query: (body) => ({

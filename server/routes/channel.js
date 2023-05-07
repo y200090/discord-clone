@@ -3,29 +3,44 @@ const Server = require('../models/Server');
 const Channel = require('../models/Channel');
 const verify = require('../middleware/verify');
 const User = require('../models/User');
+const Message = require('../models/Message');
 
 // チャンネル作成
 router.post('/create', verify, async (req, res) => {
     const { channelName, serverId, category, privateChannel, allowedUsers } = req.body;
 
     try {
-        const channel = await Channel.create({
+        let newChannel = await Channel.create({
             title: channelName,
             parentServer: serverId,
             privateChannel,
             category,
             allowedUsers
         });
+
+        const newMessage = await Message.create({
+            postedChannel: newChannel?._id,
+            type: 'サンプル',
+            body: 'チャンネルが作成されました',
+        });
+
+        newChannel.latestMessage = newMessage?._id;
+        newChannel = await newChannel.save();
+        newChannel = await newChannel.populate([
+            {path: 'parentServer', populate: {path: 'members'}}, 
+            {path: 'allowedUsers'}, 
+            {path: 'notifications'},
+        ]);
             
         await Server.findByIdAndUpdate(serverId, {
             $addToSet: {
-                ownedChannels: channel._id
+                ownedChannels: newChannel._id
             }
         }, { 
             runValidators: true 
         });
 
-        return res.status(200).json(channel);
+        return res.status(200).json(newChannel);
         
     } catch (err) {
         return res.status(500).json(err);
@@ -130,7 +145,7 @@ router.post('/remove/direct-message', verify, async (req, res) => {
 });
 
 // グループDM作成
-router.post('/groupDM/create', verify, async (req, res) => {
+router.post('/create/group-direct-message', verify, async (req, res) => {
     const { currentUser, targetUsers } = req.body;
 
     try {
@@ -144,7 +159,7 @@ router.post('/groupDM/create', verify, async (req, res) => {
             return user.displayName;
         });
 
-        let newGroupDM = await Channel.create({
+        let newGroupDirectMessage = await Channel.create({
             title: `${currentUser.displayName}, ${targetUserDisplayNames.join(', ')}`,
             category: 'グループダイレクトメッセージ',
             directMessage: true,
@@ -155,13 +170,19 @@ router.post('/groupDM/create', verify, async (req, res) => {
             color: colorCode
         });
 
-        newGroupDM = await newGroupDM.populate(['allowedUsers']);
-        
-        // await User.findOneAndUpdate({ _id: currentUser._id }, {
-        //     $addToSet: {
-        //         setDirectMessages: newGroupDM._id
-        //     }
-        // }, { runValidators: true });
+        const newMessage = await Message.create({
+            postedChannel: newGroupDirectMessage?._id,
+            type: 'サンプル',
+            body: 'チャンネルが作成されました',
+        });
+
+        newGroupDirectMessage.latestMessage = newMessage?._id;
+        newGroupDirectMessage = await newGroupDirectMessage.save();
+        newGroupDirectMessage = await newGroupDirectMessage.populate([
+            {path: 'parentServer', populate: {path: 'members'}},
+            {path: 'allowedUsers'},
+            {path: 'notifications'},
+        ]);
 
         await User.updateMany({
             _id: {
@@ -172,13 +193,13 @@ router.post('/groupDM/create', verify, async (req, res) => {
             }
         }, {
             $addToSet: {
-                setDirectMessages: newGroupDM._id
+                setDirectMessages: newGroupDirectMessage._id
             }
         }, { 
             runValidators: true 
         });
 
-        return res.status(200).json(newGroupDM);
+        return res.status(200).json(newGroupDirectMessage);
         
     } catch (err) {
         return res.status(500).json(err);
@@ -186,21 +207,55 @@ router.post('/groupDM/create', verify, async (req, res) => {
 });
 
 router.post('/withdraw', verify, async (req, res) => {
-    const { channelId, currentUserId } = req.body;
+    const { channelId, withDrawnUser, isChecked } = req.body;
     
     try {
-        // let currentChannel = await Channel.findById(channelId);
-
         let targetChannel = await Channel.findByIdAndUpdate(channelId, {
             $pull: {
-                allowedUsers: currentUserId,
+                allowedUsers: withDrawnUser?._id,
             },
         }, {
             runValidators: true,
             new: true,
         });
 
-        return res.status(200).json(targetChannel);
+        if (!isChecked) {
+            let newMessage = await Message.create({
+                postedChannel: channelId,
+                type: 'アナウンス',
+                body: `${withDrawnUser?.displayName}が${targetChannel?.title}を退出しました。`,
+                sender: withDrawnUser?._id,
+                readUsers: [withDrawnUser?._id],
+            });
+
+            newMessage = await newMessage.populate([
+                {path: 'postedChannel', populate: {path: 'allowedUsers'}}, 
+                {path: 'sender'}, 
+                {path: 'readUsers'}
+            ]);
+
+            targetChannel.latestMessage = newMessage?._id;
+            targetChannel = await targetChannel.save();
+            targetChannel = await targetChannel.populate([
+                {path: 'allowedUsers'},
+                {path: 'latestMessage'},
+            ]);
+
+            return res.status(200).json({
+                targetChannel,
+                withDrawnUser, 
+                newMessage,
+            });
+        }
+
+        targetChannel = await targetChannel.populate([
+            {path: 'allowedUsers'},
+        ]);
+
+        return res.status(200).json({
+            targetChannel,
+            withDrawnUser,
+        });
         
     } catch (err) {
         return res.status(500).json(err);

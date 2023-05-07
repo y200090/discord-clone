@@ -6,23 +6,17 @@ import { useSelector } from 'react-redux'
 import { AddToFriend, Blocking, Online, Pending, ShowAll } from '../features'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { selectFriendRequests } from '../redux/slices/requestSlice'
+import styled from '@emotion/styled'
 
 const Friends = () => {
   const currentUser = useSelector(selectCurrentUser);
   const friendRequests = useSelector(selectFriendRequests);
   const friendItems = ['オンライン', '全て表示', '保留中', 'ブロック中', 'フレンドに追加'];
-  
-  // useEffect(() => {
-  //   socket.on('update_request', (message) => {
-  //     console.log('==========\n', message, '\n==========');
-  //     // refetch();
-  //   });
 
-  //   return () => {
-  //     socket.off('update_request');
-  //   }
-  // }, [socket]);
-  
+  const postRequests = friendRequests?.filter((request) => {
+    return request?.from?._id !== currentUser?._id;
+  });
+
   return (
     <>
       <Tabs variant='unstyled' 
@@ -80,11 +74,14 @@ const Friends = () => {
                 }}
               >
                 <Text m='0 auto'
-                  whiteSpace='nowrap'
-                  textOverflow='ellipsis'
-                  overflow='hidden'
+                  whiteSpace='nowrap' textOverflow='ellipsis' overflow='hidden'
+                  display='flex' alignItems='center'
                 >
                   {friendItem}
+                  
+                  {friendItem == '保留中' && postRequests?.length > 0 && (
+                    <NotificationCounter>{postRequests?.length}</NotificationCounter>
+                  )}
                 </Text>
               </Tab>
             ))}
@@ -126,6 +123,24 @@ const Friends = () => {
       </Tabs>
     </>
   )
-}
+};
+
+const NotificationCounter = styled.span`
+  flex: 0 0 auto;
+  min-height: 16px;
+  height: 16px;
+  min-width: 16px;
+  margin-left: 8px;
+  padding: 0 1px 1px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  color: #fffff3;
+  background-color: #f23f42;
+`;
 
 export default Friends

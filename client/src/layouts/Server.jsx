@@ -9,37 +9,36 @@ import { IoClose } from 'react-icons/io5'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { ChannelLink, StatusPanel } from '../components'
-import { CreateChannel, CreateInvitationForm } from '../features'
+import { CreateChannelForm, CreateInvitationForm } from '../features'
 import { selectJoinedServers } from '../redux/slices/serverSlice'
+import { selectParticipatingChannels } from '../redux/slices/channelSlice'
 
 const Server = () => {
   const { serverId, channelId } = useParams();
   const currentUser = useSelector(selectCurrentUser);
   const joinedServers = useSelector(selectJoinedServers);
-  let currentServer = joinedServers?.filter((server) => {
+  const currentServer = joinedServers?.filter((server) => {
     return server?._id == serverId;
   });
-  // let server;
-  // if (serverId) {
-  //   server = currentUser?.joinedServers?.filter((joinedServer) => {
-  //     return joinedServer._id == serverId;
-  //   });
-  //   console.log(server);
-  //   if (!server) server = [];
-  //   else if (server?.length) server = server[0];
-  //   console.log('サーバー情報：', server);
-  // }
+  const ownedChannelIds = currentServer[0]?.ownedChannels?.map((channel) => {
+    return channel?._id;
+  });
+  const participatingChannels = useSelector(selectParticipatingChannels);
+  const ownedChannels = participatingChannels?.filter((channel) => {
+    return ownedChannelIds?.includes(channel?._id);
+  });
   const navigate = useNavigate();
   const [ isModalOpen, setIsModalOpen ] = useState('');
   const [ arisingFrom, setArisingFrom ] = useState('');
   const [ isTextChannelOpen, setIsTextChannelOpen ] = useState(true);
   const [ isVoiceChannelOpen, setIsVoiceChannelOpen ] = useState(true);
   
-  const createChannelRest = {
+  const createChannelFormRest = {
     isOpen: isModalOpen === 'createChannel',
     onClose: () => setIsModalOpen(''),
     arisingFrom: arisingFrom,
     server: currentServer[0],
+    currentUser: currentUser,
   };
 
   const createInvitationFormRest = {
@@ -177,7 +176,7 @@ const Server = () => {
             `}
           >
             <Box as={'ul'} w='100%' pt='16px'>
-              <Flex as={'li'} position='relative' w='100%' pl='12px' mb='2px'>
+              <Flex as={'li'} position='relative' minH='22px' w='100%' pl='12px' mb='2px'>
                 <Flex align='center' justify='space-between'
                   w='100%' color='#989aa2'
                   _hover={{
@@ -200,42 +199,53 @@ const Server = () => {
                     テキストチャンネル
                   </Text>
 
-                  <Tooltip label='チャンネルを作成'
-                    hasArrow placement='top'
-                    p='6px 10px' borderRadius='4px'
-                    bg='#111214' color='#e0e1e5'
-                  >
-                    <IconButton aria-label='create-channel'
-                      icon={<MdAdd size={22} />} size={'22'}
-                      mr='6px' flex='0 0 auto' bg='transparent'
-                      _hover={{ color: '#e0e1e5', bg: 'transparent' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsModalOpen('createChannel');
-                        setArisingFrom('テキストチャンネル内');
-                      }}
-                    />
-                  </Tooltip>
+                  {currentServer[0]?.owner?._id === currentUser?._id &&
+                    <Tooltip label='チャンネルを作成'
+                      hasArrow placement='top'
+                      p='6px 10px' borderRadius='4px'
+                      bg='#111214' color='#e0e1e5'
+                    >
+                      <IconButton aria-label='create-channel'
+                        icon={<MdAdd size={22} />} size={'22'}
+                        mr='6px' flex='0 0 auto' bg='transparent'
+                        _hover={{ color: '#e0e1e5', bg: 'transparent' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsModalOpen('createChannel');
+                          setArisingFrom('テキストチャンネル内');
+                        }}
+                      />
+                    </Tooltip>
+                  }
                 </Flex>
               </Flex>
 
-              {currentServer[0]?.ownedChannels?.map((channel) => {
+              {ownedChannels?.map((channel) => {
                 if (channel?.category === 'テキストチャンネル') {
-                  return (
-                    <ChannelLink key={channel?._id}
-                      toURL={`/${serverId}/${channel?._id}`}
-                      channelName={channel?.title}
-                      category={channel?.category}
-                      isAccordionOpen={isTextChannelOpen}
-                      server={currentServer[0]}
-                    />
-                  )
+                  const allowedUserIds = channel?.allowedUsers?.map((user) => {
+                    return user._id;
+                  });
+
+                  if (allowedUserIds.includes(currentUser?._id)) {
+                    return (
+                      <ChannelLink key={channel?._id}
+                        toURL={`/${serverId}/${channel?._id}`}
+                        {...(channel?.privateChannel &&
+                          {privateChannel: true}
+                        )}
+                        isAccordionOpen={isTextChannelOpen}
+                        server={currentServer[0]}
+                        channel={channel}
+                        currentUser={currentUser}
+                      />
+                    )
+                  }
                 }
               })}
             </Box>
 
             <Box as={'ul'} w='100%' pt='16px'>
-              <Flex as={'li'} position='relative' w='100%' pl='12px' mb='2px'>
+              <Flex as={'li'} position='relative' minH='22px' w='100%' pl='12px' mb='2px'>
                 <Flex align='center' justify='space-between'
                   w='100%' color='#989aa2'
                   _hover={{
@@ -258,34 +268,36 @@ const Server = () => {
                     ボイスチャンネル
                   </Text>
 
-                  <Tooltip label='チャンネルを作成' 
-                    hasArrow placement='top' 
-                    p='6px 10px' borderRadius='4px'
-                    bg='#111214' color='#e0e1e5'
-                  >
-                    <IconButton aria-label='チャンネル作成'
-                      icon={<MdAdd size={22} />} size={'22'}
-                      flex='0 0 auto' mr='6px' bg='transparent'
-                      _hover={{ color: '#e0e1e5', bg: 'transparent' }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setIsModalOpen('createChannel');
-                        setArisingFrom('ボイスチャンネル内');
-                      }}
-                    />
-                  </Tooltip>
+                  {currentServer[0]?.owner?._id === currentUser?._id &&
+                    <Tooltip label='チャンネルを作成' 
+                      hasArrow placement='top' 
+                      p='6px 10px' borderRadius='4px'
+                      bg='#111214' color='#e0e1e5'
+                    >
+                      <IconButton aria-label='チャンネル作成'
+                        icon={<MdAdd size={22} />} size={'22'}
+                        flex='0 0 auto' mr='6px' bg='transparent'
+                        _hover={{ color: '#e0e1e5', bg: 'transparent' }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsModalOpen('createChannel');
+                          setArisingFrom('ボイスチャンネル内');
+                        }}
+                      />
+                    </Tooltip>
+                  }
                 </Flex>
               </Flex>
 
-              {currentServer[0]?.ownedChannels?.map((channel) => {
+              {ownedChannels?.map((channel) => {
                 if (channel?.category === 'ボイスチャンネル') {
                   return (
                     <ChannelLink key={channel?._id}
                       toURL={`/${serverId}/${channel?._id}`}
-                      channelName={channel?.title}
-                      category={channel?.category}
                       isAccordionOpen={isVoiceChannelOpen}
                       server={currentServer[0]}
+                      channel={channel}
+                      currentUser={currentUser}
                     />
                   )
                 }
@@ -301,7 +313,7 @@ const Server = () => {
         <Outlet />
       </Flex>
 
-      <CreateChannel {...createChannelRest} />
+      <CreateChannelForm {...createChannelFormRest} />
       <CreateInvitationForm {...createInvitationFormRest} />
     </>
   )

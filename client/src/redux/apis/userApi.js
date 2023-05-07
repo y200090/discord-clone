@@ -36,6 +36,7 @@ export const userApi = apiSlice.injectEndpoints({
                     socket.emit('now_online', result?.data);
 
                     socket.on('update_online_status', (friend) => {
+                        console.log('フレンドのステータスが変更になりました');
                         console.log(friend);
                         updateCachedData((draft) => {
                             let index = draft.friends.findIndex((item) => {
@@ -47,6 +48,7 @@ export const userApi = apiSlice.injectEndpoints({
                     });
 
                     socket.on('request_approved', (newFriend) => {
+                        console.log('フレンド申請が承諾されました');
                         console.log(newFriend);
                         updateCachedData((draft) => {
                             draft.friends.push(newFriend);
@@ -54,6 +56,7 @@ export const userApi = apiSlice.injectEndpoints({
                     });
 
                     socket.on('friend_deleted', (friendId) => {
+                        console.log('フレンドが削除されました');
                         console.log(friendId);
                         updateCachedData((draft) => {
                             let index = draft.friends.findIndex((item) => {
@@ -64,6 +67,7 @@ export const userApi = apiSlice.injectEndpoints({
                     });
 
                     socket.on('direct_message_added', (DM) => {
+                        console.log('DMが追加されました');
                         console.log(DM);
                         updateCachedData((draft) => {
                             console.log(draft.setDirectMessages.length)
@@ -85,6 +89,7 @@ export const userApi = apiSlice.injectEndpoints({
                     });
 
                     socket.on('direct_message_removed', (directMessageId) => {
+                        console.log('DMをセットから外しました');
                         console.log(directMessageId);
                         updateCachedData((draft) => {
                             let index = draft.setDirectMessages.findIndex((item) => {
@@ -125,9 +130,28 @@ export const userApi = apiSlice.injectEndpoints({
                         });
                     });
 
+                    socket.on('new_channel_created', (newChannel) => {
+                        updateCachedData((draft) => {
+                            let index = draft.findIndex((item) => {
+                                return item._id == newChannel?.parentServer?._id;
+                            });
+                            console.log(index);
+                            if (index == -1) return;
+
+                            let flag = draft[index].ownedChannels.findIndex((item) => {
+                                return item._id == newChannel._id;
+                            });
+                            console.log(flag)
+                            if (flag != -1) return;
+
+                            draft[index].ownedChannels.push(newChannel);
+                        });
+                    });
+
                     await cacheEntryRemoved;
 
                     socket.off('new_server_created');
+                    socket.off('new_channel_created');
                     
                 } catch (err) {
                     console.log(err);

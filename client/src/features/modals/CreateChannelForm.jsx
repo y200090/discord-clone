@@ -1,34 +1,62 @@
-import { Box, Button, Flex, FormControl, FormLabel, Heading, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Switch, Text, Icon, Checkbox, ModalOverlay } from '@chakra-ui/react'
+import { Box, Button, Flex, FormControl, FormLabel, Heading, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, Switch, Text, Icon, Checkbox, ModalOverlay, Avatar } from '@chakra-ui/react'
 import { css } from '@emotion/react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { BiHash } from 'react-icons/bi'
 import { IoMdLock } from 'react-icons/io'
 import { HiSpeakerWave } from 'react-icons/hi2'
-import { useChannelCreationMutation } from '../../redux/apis/channelApi'
+import { useCreateChannelMutation } from '../../redux/apis/channelApi'
 import { useNavigate } from 'react-router-dom'
+import { FaDiscord } from 'react-icons/fa'
+import { LockIcon } from '@chakra-ui/icons'
 
-const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
+const CreateChannelForm = (props) => {
+  const { isOpen, onClose, arisingFrom, server, currentUser } = props;
   const navigate = useNavigate();
-  const [ ChannelCreation ] = useChannelCreationMutation();
+  const [ CreateChannel ] = useCreateChannelMutation();
   const [ channelName, setChannelName ] = useState('');
   const [ category, setCategory ] = useState('テキストチャンネル');
   const [ privateChannel, setPrivateChannel ] = useState(false);
   const [ progress, setProgress ] = useState(0);
+  const [ allowedUserIds, setAllowedUserIds] = useState([currentUser?._id]);
 
+  useEffect(() => {
+    return () => {
+      setChannelName('');
+      setCategory('テキストチャンネル');
+      setPrivateChannel(false);
+      setProgress(0);
+      setAllowedUserIds([currentUser?._id]);
+    };
+  }, [isOpen]);
+
+  const changeSelectUser = (e) => {
+    if (!e.target.checked) {
+      setAllowedUserIds(
+        allowedUserIds.filter((userId) => (userId !== e.target.id))
+      );
+
+    } else {
+      setAllowedUserIds([...allowedUserIds, e.target.id]);
+    }
+  };
+  
   const handleCreateChannel = async (e) => {
     e.preventDefault();
 
     try {
-      const members = server.members.map((member) => {
-        return member._id
-      });
+      let memberIds;
+      if (!privateChannel) {
+        memberIds = server.members.map((member) => {
+          return member._id
+        });
+      }
       
-      const newChannel = await ChannelCreation({ 
+      const newChannel = await CreateChannel({ 
         channelName, 
         serverId: server._id, 
         category, 
         privateChannel, 
-        allowedUsers: members 
+        allowedUsers: privateChannel ? allowedUserIds : memberIds
       }).unwrap();
 
       console.log(newChannel);
@@ -43,6 +71,7 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
       setCategory('テキストチャンネル');
       setPrivateChannel(false);
       setProgress(0);
+      setAllowedUserIds([currentUser?._id]);
     }
   };  
 
@@ -107,9 +136,10 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                       _hover={{
                         bg: category !== CheckFieldItem.value && '#393c41',
                         'span:last-of-type': {
-                          div: {
+                          'div > div': {
                             svg: {
-                              color: category !== CheckFieldItem.value && '#9a9da1'
+                              color: category !== CheckFieldItem.value && '#9a9da1',
+                              outlineColor: '#393c41'
                             }
                           }
                         }
@@ -139,19 +169,20 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                       `}
                       onChange={(e) => setCategory(e.target.value)}
                     >
-                      <Flex align='center' mr='8px' position='relative'>
-                        <Icon as={CheckFieldItem.icon} boxSize='22px' mr='12px' color='#acadb1' />
-                        {/* {privateChannel && (
-                          <Icon 
-                            as={IoMdLock} 
-                            boxSize='10px'
-                            position='absolute'
-                            top='20px'
-                            left='14px'
-                            borderRadius='100%'
-                            color='#7e8288'
-                          />
-                        )} */}
+                      <Flex align='center' mr='8px'>
+                        <Box position='relative'>
+                          <Icon as={CheckFieldItem.icon} boxSize='22px' mr='12px' color='#acadb1' />
+                          {privateChannel && (
+                            <LockIcon boxSize='8px' 
+                              position='absolute' top='10%' left='14px' 
+                              color='#acadb1' 
+                              outline={category === CheckFieldItem.value 
+                                ? '2px solid #43444b' 
+                                : '2px solid #2b2d31'
+                              }
+                            />
+                          )}
+                        </Box>
                         <Box>
                           <Text fontWeight='500' fontSize='16px' lineHeight='20px' color='#dbdee1'>
                             {CheckFieldItem.title}
@@ -176,23 +207,19 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                     <InputLeftElement flex='1 1 0%'
                       position='relative'
                       justifyContent='flex-start'
-                      p='0 6px' color='#dbdee1'
+                      h='auto' p='0 6px' color='#dbdee1'
                       pointerEvents='none'
                     >
                       <Icon boxSize='18px'
                         as={category === 'テキストチャンネル' ? BiHash : HiSpeakerWave} 
                       />
-                      {/* {privateChannel && (
-                        <Icon 
-                          as={IoMdLock} 
-                          boxSize='8px'
-                          position='absolute'
-                          top='10px'
-                          right='6px'
-                          borderRadius='100%'
-                          outline='2px solid #1e1f22'
+                      {privateChannel && (
+                        <LockIcon boxSize='6px' 
+                          position='absolute' top='12px' left='18px' 
+                          color='#dbdee1' 
+                          outline='1px solid #1e1f22' 
                         />
-                      )} */}
+                      )}
                     </InputLeftElement>
                     <Input type='text' id='channelName' value={channelName}
                       h='40px' p='10px 10px 10px 0' color='#dbdee1'
@@ -240,6 +267,9 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                           span {
                             background-color: #fff;
                           }
+                        }
+                        span[data-focus-visible] {
+                          box-shadow: none;
                         }
                       `}
                   />
@@ -312,7 +342,7 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                     fontSize='16px' fontWeight='400' lineHeight='32px'
                     border='transparent'
                     focusBorderColor='transparent'
-                    placeholder='例：@wunpus...'
+                    placeholder='例：@clone...'
                     css={css`
                       &::placeholder {
                         color: #949ba4;
@@ -323,6 +353,71 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
                 <Text fontSize='12px' lineHeight='16px' fontWeight='400' color='#dbdee1'>
                   @を頭につけたメンバー名を入力して個々人を招待してください
                 </Text>
+              </Box>
+              <Box>
+                <Text h='32px' p='8px 0 0 16px' color='#dbdee1'
+                  fontSize='12px' lineHeight='16px' fontWeight='700'
+                >
+                  メンバー
+                </Text>
+                {server?.members?.map((member) => {
+                  if (member?._id == currentUser?._id) return;
+                  return (
+                    <Flex key={member?._id}
+                      align='center' cursor='pointer' m='0 12px'
+                      bg='transparent' borderRadius='4px'
+                      _hover={{ bg: '#43444b' }}
+                    >
+                      <FormLabel htmlFor={member?._id} cursor='pointer'
+                        h='100%' w='100%' m='0' p='8px 6px'
+                        display='flex' flex='1 1 auto' alignItems='center'
+                      >
+                        <Checkbox id={member?._id} h='18px' w='18px'
+                          css={css`
+                            span {
+                              height: 18px;
+                              width: 18px;
+                              border-width: 1px;
+                              border-color: #80848e;
+                              border-radius: 6px;
+                            }
+                            span[data-checked] {
+                              background-color: #5865f2;
+                              border-color: #7983f5;
+                            }
+                            span[data-checked]:hover {
+                              background-color: #5865f2;
+                              border-color: #7983f5;
+                            }
+                            span[data-focus-visible] {
+                              box-shadow: none;
+                            }
+                          `}
+                          onChange={changeSelectUser}
+                        />
+                        <Flex align='center' flex='1 1 auto' pl='16px'>
+                          <Avatar boxSize='24px' bg={member?.color}
+                            {...(member?.photoURL
+                              ? {src: member.photoURL}
+                              : {icon: <FaDiscord size='16px' />}
+                            )}
+                          />
+                          <Text color='#dbdee1' m='0 4px 0 8px'
+                            fontSize='14px' lineHeight='18px' fontWeight='400'
+                          >
+                            {member?.displayName}
+                          </Text>
+                          <Text color='#949ba4' ml='4px' flex='1 1 0%'
+                            fontSize='14px' lineHeight='18px' fontWeight='400'
+                            overflow='hidden' textOverflow='ellipsis' whiteSpace='nowrap'
+                          >
+                            {member?.tag}
+                          </Text>
+                        </Flex>
+                      </FormLabel>
+                    </Flex>
+                  )
+                })}
               </Box>
             </ModalBody>
 
@@ -338,14 +433,13 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
               >
                 戻る
               </Button>
-              <Button
+              <Button type='submit' form='createChannel'
                 h='38px' w='auto' minW='96px' p='2px 16px'
                 bg='#5865f2' color='#fff' borderRadius='3px'
                 fontSize='14px' lineHeight='16px' fontWeight='500'
                 _hover={{ bg: '#4752c4' }}
-                onClick={() => console.log('click')}
               >
-                スキップ
+                {allowedUserIds?.length > 0 ? 'チャンネルを作成' : 'スキップ'}
               </Button>
             </ModalFooter>
           </Box>
@@ -356,4 +450,4 @@ const CreateChannel = ({ isOpen, onClose, arisingFrom, server }) => {
   )
 }
 
-export default CreateChannel
+export default CreateChannelForm

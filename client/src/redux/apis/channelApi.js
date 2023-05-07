@@ -3,13 +3,28 @@ import { apiSlice } from '../slices/apiSlice';
 
 export const channelApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        ChannelCreation: builder.mutation({
+        CreateChannel: builder.mutation({
             query: (body) => ({
                 url: '/channel/create',
                 method: 'POST',
                 body,
             }),
             // invalidatesTags: ['Server', 'User']
+            async onCacheEntryAdded(
+                arg,
+                { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
+            ) {
+                try {
+                    const { data: newChannel } = await cacheDataLoaded;
+
+                    socket.emit('create_channel', newChannel);
+                    
+                    await cacheEntryRemoved;
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         getChannelInfo: builder.query({
             query: (channelId) => ({
@@ -31,36 +46,70 @@ export const channelApi = apiSlice.injectEndpoints({
                     console.log(data);
 
                     socket.on('new_channel_created', (newChannel) => {
+                        console.log('新しいチャンネルが作成されました');
                         console.log(newChannel);
                         updateCachedData((draft) => {
                             draft.push(newChannel);
                         });
                     });
 
-                    socket.on('withdrawn_from_channel', (channel) => {
-                        console.log(channel);
+                    socket.on('server_joined', ({ channels, currentUser }) => {
+                        console.log('サーバーに参加しました');
+                        console.log(channels);
+                        const publicChannels = channels.filter((channel) => {
+                            return !channel.privateChannel;
+                        });
+                        console.log(publicChannels);
+                        
+                        updateCachedData((draft) => {
+                            publicChannels.forEach((element) => {
+                                console.log(element?._id);
+                                let index = draft.findIndex((item) => {
+                                    return element._id == item._id;
+                                });
+                                console.log(index);
+                                if (index == -1) return;
+                                draft[index].allowedUsers.push(currentUser);
+                            });
+                        });
+                    });
+
+                    socket.on('withdrawn_from_channel', ({targetChannel, withDrawnUser}) => {
+                        console.log(withDrawnUser?.displayName, 'がチャンネルを脱退しました');
+                        console.log(targetChannel);
                         updateCachedData((draft) => {
                             let index = draft.findIndex((item) => {
-                                return item._id == channel?._id;
+                                return item._id == targetChannel?._id;
                             });
-                            draft.splice(index, 1);
-                            console.log(draft.length);
+                            console.log(index);
+                            if (index == -1) return;
+                            let number = draft[index]?.allowedUsers?.findIndex((user) => {
+                                return user._id = withDrawnUser?._id;
+                            });
+                            console.log(number)
+                            if (number == -1) return;
+                            console.log(draft[index]?.allowedUsers)
+                            draft[index]?.allowedUsers?.splice(number, 1);
+                            console.log(draft[index]?.allowedUsers)
                         });
                     });
 
                     socket.on('message_sent', (newMessage) => {
+                        console.log('最新のメッセージが送信されました');
                         updateCachedData((draft) => {
                             let index = draft.findIndex((item) => {
                                 return item._id == newMessage?.postedChannel?._id;
                             });
                             console.log(index)
                             console.log(newMessage)
-                            // draft[index].latestMessage.assign(newMessage);
-                            Object.assign(draft[index].latestMessage, newMessage);
+                            console.log(draft[index]?.latestMessage);
+                            if (index == -1) return;
+                            Object.assign(draft[index]?.latestMessage, newMessage);
                         });
                     });
 
                     socket.on('new_notification_received', ({ channelId, ...notification }) => {
+                        console.log('新規通知が届きました');
                         console.log(channelId);
                         console.log(notification);
                         updateCachedData((draft) => {
@@ -78,18 +127,20 @@ export const channelApi = apiSlice.injectEndpoints({
                     });
 
                     socket.on('notification_cleared', ({ channelId, currentUserId }) => {
+                        console.log('通知を消化しました');
                         updateCachedData((draft) => {
-                            // let indices = [];
                             let current = draft.findIndex((item) => {
                                 return item._id == channelId;
                             });
-                            draft[current].notifications?.forEach(() => {
+                            console.log(draft[current].notifications?.length)
+                            const notifications = draft[current].notifications.concat();
+                            notifications?.forEach(() => {
                                 let index = draft[current].notifications?.findIndex((item) => {
                                     return item?.recipient == currentUserId;
                                 });
+                                console.log(index);
                                 if (index == -1) return;
                                 else {
-                                    // indices.push(index);
                                     draft[current].notifications.splice(index, 1);
                                 }
                             });
@@ -99,6 +150,7 @@ export const channelApi = apiSlice.injectEndpoints({
                     await cacheEntryRemoved;
 
                     socket.off('new_channel_created');
+                    socket.off('server_joined');
                     socket.off('withdrawn_from_channel');
                     socket.off('message_sent');
                     socket.off('new_notification_received');
@@ -159,7 +211,7 @@ export const channelApi = apiSlice.injectEndpoints({
         }),
         CreateGroupDirectMessage: builder.mutation({
             query: (body) => ({
-                url: '/channel/groupDM/create',
+                url: '/channel/create/group-direct-message',
                 method: 'POST',
                 body
             }), 
@@ -192,10 +244,15 @@ export const channelApi = apiSlice.injectEndpoints({
                 { updateCachedData, cacheDataLoaded, cacheEntryRemoved }
             ) {
                 try {
-                    const { data: channel } = await cacheDataLoaded;
-                    console.log(channel);
+                    const { data } = await cacheDataLoaded;
+                    const targetChannel = data.targetChannel;
+                    const withDrawnUser = data.withDrawnUser;
+                    const newMessage = data?.newMessage;
+                    if (newMessage) {
+                        socket.emit('send_message', newMessage);
+                    }
 
-                    socket.emit('withdraw_from_channel', channel);
+                    socket.emit('withdraw_from_channel', {targetChannel, withDrawnUser});
 
                     await cacheEntryRemoved;
                     
@@ -208,7 +265,7 @@ export const channelApi = apiSlice.injectEndpoints({
 });
 
 export const { 
-    useChannelCreationMutation, 
+    useCreateChannelMutation, 
     useGetChannelInfoQuery, 
     useGetParticipatingChannelsQuery,
     useAddDirectMessageMutation,

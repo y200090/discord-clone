@@ -7,10 +7,11 @@ export { default as Online } from './friends/Online'
 export { default as Pending } from './friends/Pending'
 export { default as ShowAll } from './friends/ShowAll'
 
-export { default as CreateChannel } from './modals/CreateChannel'
-export { default as CreateDirectMessage } from './modals/CreateDirectMessage'
+export { default as CreateChannelForm } from './modals/CreateChannelForm'
+export { default as CreateDirectMessageForm } from './modals/CreateDirectMessageForm'
 export { default as CreateInvitationForm } from './modals/CreateInvitationForm'
 export { default as CreateServer } from './modals/CreateServer';
+export { default as InviteDirectMessageForm } from './modals/InviteDirectMessageForm';
 
 export { default as Logout } from './settings/Logout'
 export { default as MyAccount } from './settings/MyAccount'

@@ -2,7 +2,7 @@ import { Box, Flex, IconButton, Input, Icon, Text, Tooltip, Heading } from '@cha
 import { css } from '@emotion/react'
 import React, { useEffect, useRef, useState } from 'react'
 import { BiHash } from 'react-icons/bi'
-import { MdPeopleAlt } from 'react-icons/md'
+import { MdPeopleAlt, MdPersonAddAlt1 } from 'react-icons/md'
 import { GiHamburgerMenu } from 'react-icons/gi'
 import { useParams } from 'react-router-dom'
 import { AtSignIcon } from '@chakra-ui/icons'
@@ -11,7 +11,7 @@ import { socket } from '../socket'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { MessageBox } from '../components'
-import { ActiveSideBar, SendMessage } from '../features'
+import { ActiveSideBar, InviteDirectMessageForm, SendMessage } from '../features'
 import { selectParticipatingChannels } from '../redux/slices/channelSlice'
 
 const Chat = () => {
@@ -32,34 +32,14 @@ const Chat = () => {
     });
     console.log(friend)
   }
-
-  // let channel;
-  // if (serverId) {
-  //   const server = currentUser?.joinedServers?.filter((joinedServer) => {
-  //     return joinedServer._id == serverId;
-  //   });
-  //   console.log('サーバー情報：', server);
-  //   if (!server) channel = [];
-  //   else if (server?.length) { 
-  //     channel = server[0]?.ownedChannels?.filter((ownedChannel) => {
-  //       return ownedChannel._id == channelId;
-  //     });
-  //     if (channel?.length) channel = channel[0];
-  //   }
-
-  // } else {
-  //   channel = currentUser?.setDirectMessages?.filter((directMessage) => {
-  //     return directMessage._id == channelId;
-  //   });
-  //   if (channel?.length) channel = channel[0];
-  // }
   console.log('チャンネル情報：', currentChannel[0]);
 
   const { data } = useGetMessagesQuery(channelId);
   const messages = data?.messages;
   console.log(messages);
   const messageRef = useRef();
-  const [ isOpen, setIsOpen ] = useState('');
+  const [ isSideBarOpen, setIsSideBarOpen ] = useState('');
+  const [ isModalOpen, setIsModalOpen ] = useState('');
 
   useEffect(() => {
     if (currentUser) {
@@ -162,26 +142,54 @@ const Chat = () => {
         </Flex>
         
         <Flex flex='0 0 auto' align='center'>
-          <Tooltip label='メンバーリストを表示'
-            hasArrow placement='bottom'
-            p='6px 10px' borderRadius='4px'
-            bg='#111214' color='#e0e1e5'
-          >
-            <IconButton aria-label='メンバーリストを表示'
-              icon={<MdPeopleAlt size={24} />} size={24}
-              bg='transparent' m='0 8px' 
-              color={
-                isOpen === 'メンバーリストを表示' ? '#fff' : '#b8b9bf'
-              }
-              _hover={{ 
-                bg: 'transparent', 
-                color: isOpen ? '#b8b9bf' : '#e0e1e5' 
-              }}
-              onClick={(e) => setIsOpen(
-                isOpen ? '' : e.currentTarget.ariaLabel
-              )}
-            />
-          </Tooltip>
+          {currentChannel[0]?.category === 'グループダイレクトメッセージ' &&
+            <>
+              <Tooltip label='DMにフレンドを追加'
+                hasArrow placement='bottom'
+                p='6px 10px' borderRadius='4px'
+                bg='#111214' color='#e0e1e5'
+              >
+                <IconButton aria-label='DMにフレンドを追加'
+                  icon={<MdPersonAddAlt1 size={24} />} size={24}
+                  bg='transparent' m='0 8px' 
+                  color={
+                    isModalOpen === 'DMにフレンドを追加' ? '#fff' : '#b8b9bf'
+                  }
+                  _hover={{ 
+                    bg: 'transparent', 
+                    color: isModalOpen ? '#b8b9bf' : '#e0e1e5' 
+                  }}
+                  onClick={(e) => setIsModalOpen(
+                    isModalOpen ? '' : e.currentTarget.ariaLabel
+                  )}
+                />
+              </Tooltip>
+            </>
+          }
+          {currentChannel[0]?.category !== 'ダイレクトメッセージ' &&
+            <>
+              <Tooltip label='メンバーリストを表示'
+                hasArrow placement='bottom'
+                p='6px 10px' borderRadius='4px'
+                bg='#111214' color='#e0e1e5'
+              >
+                <IconButton aria-label='メンバーリストを表示'
+                  icon={<MdPeopleAlt size={24} />} size={24}
+                  bg='transparent' m='0 8px' 
+                  color={
+                    isSideBarOpen === 'メンバーリストを表示' ? '#fff' : '#b8b9bf'
+                  }
+                  _hover={{ 
+                    bg: 'transparent', 
+                    color: isSideBarOpen ? '#b8b9bf' : '#e0e1e5' 
+                  }}
+                  onClick={(e) => setIsSideBarOpen(
+                    isSideBarOpen ? '' : e.currentTarget.ariaLabel
+                  )}
+                />
+              </Tooltip>
+            </>
+          }
 
           <Box m='0 8px' z='100'>
             <Input type='text' id='message'
@@ -264,8 +272,14 @@ const Chat = () => {
           </Box>
         </Flex>
 
+        <InviteDirectMessageForm 
+          isOpen={isModalOpen === 'DMにフレンドを追加'}
+          onClose={() => setIsModalOpen('')}
+          currentChannel={currentChannel[0]}
+        />
+
         <ActiveSideBar 
-          isOpen={isOpen}
+          isOpen={isSideBarOpen === 'メンバーリストを表示'}
           header={`メンバー—${currentChannel[0]?.allowedUsers?.length}`}
           members={currentChannel[0]?.allowedUsers}
           owner={currentChannel[0]?.parentServer?.owner}

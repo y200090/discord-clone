@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAddDirectMessageMutation, useCreateGroupDirectMessageMutation } from '../../redux/apis/channelApi';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
 
-const CreateDirectMessage = ({ isOpen, onClose }) => {
+const CreateDirectMessageForm = ({ isOpen, onClose }) => {
   const currentUser = useSelector(selectCurrentUser);
   const friends = currentUser?.friends;
   const [ AddDirectMessage ] = useAddDirectMessageMutation();
@@ -28,9 +28,7 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
     }
   };
 
-  console.log(targetUsers);
-
-  const handleCreateDM = async (e) => {
+  const handleDirectMessageAction = async (e) => {
     e.preventDefault();
 
     try {
@@ -49,11 +47,11 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
       }
 
       setTargetUsers([]);
+      onClose();
       navigate(`/channels/@me/${channel?._id}`);
       
     } catch (err) {
       console.log(err);
-
     }
   };
   
@@ -159,9 +157,7 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
                       {friend?.displayName}
                     </Text>
                     <Text color='#8b929b'
-                      fontSize='14px' 
-                      fontWeight='400' 
-                      lineHeight='1.1'
+                      fontSize='14px' fontWeight='400' lineHeight='1.1'
                     >
                       {friend?.tag}
                     </Text>
@@ -208,7 +204,7 @@ const CreateDirectMessage = ({ isOpen, onClose }) => {
               border='none' borderRadius='3px'
               fontSize='14px' lineHeight='16px' fontWeight='500'
               _hover={{ bg: '#4752c4' }}
-              onClick={handleCreateDM}
+              onClick={handleDirectMessageAction}
             >
               DMの作成
             </Button>
@@ -245,4 +241,4 @@ const responsiveModal = css`
   }
 `;
 
-export default CreateDirectMessage
+export default CreateDirectMessageForm

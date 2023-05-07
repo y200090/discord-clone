@@ -96,9 +96,19 @@ router.post('/approve/friend-request', verify, async (req, res) => {
             directMessage: true,
         });
 
+        let newMessage = await Message.create({
+            postedChannel: newDirectMessage?._id,
+            type: 'サンプル',
+            body: 'チャンネルが作成されました',
+        });
+
+        newDirectMessage.latestMessage = newMessage._id;
+        newDirectMessage = await newDirectMessage.save();
+
         newDirectMessage = await newDirectMessage.populate([
             {path: 'allowedUsers'},
-            {path: 'notifications'}
+            {path: 'notifications'},
+            {path: 'latestMessage'}
         ]);
 
         return res.status(200).json({request, newDirectMessage});

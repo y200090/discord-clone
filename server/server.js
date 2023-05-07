@@ -59,6 +59,32 @@ io.on('connection', (socket) => {
         io.to(socket.id).emit('new_channel_created', ...newServer?.ownedChannels);
     });
 
+    socket.on('join_server', async ({ server, currentUser }) => {
+        console.log('--------------------');
+        console.log(`${server?.title}に参加しました`);
+
+        const allowedUserIds = server?.ownedChannels[0]?.allowedUsers?.map((user) => {
+            return user?._id;
+        });
+        console.log(allowedUserIds);
+
+        io.to(allowedUserIds).emit('server_joined', {
+            channels: server?.ownedChannels,
+            currentUser,
+        });
+    });
+
+    socket.on('create_channel', async (newChannel) => {
+        console.log('--------------------');
+        console.log('新しいチャンネルが作成されました：', newChannel);
+
+        const memberIds = newChannel?.parentServer?.members?.map((member) => {
+            return member._id;
+        });
+        console.log(memberIds);
+        io.to(memberIds).emit('new_channel_created', newChannel);
+    });
+
     socket.on('send_request', async (newRequest) => {
         console.log('--------------------');
         console.log(`${socket?.user?.tag}が${newRequest?.to?.tag}へフレンド申請を送信しました`);
@@ -111,11 +137,14 @@ io.on('connection', (socket) => {
         io.to(socket.id).emit('direct_message_removed', directMessageId);
     });
 
-    socket.on('withdraw_from_channel', (channel) => {
+    socket.on('withdraw_from_channel', ({targetChannel, withDrawnUser}) => {
         console.log('--------------------');
-        console.log(channel?._id, 'から脱退しました');
-        io.to(socket.id).emit('withdrawn_from_channel', channel);
-        io.to(socket.id).emit('direct_message_removed', channel?._id);
+        console.log(targetChannel?._id, 'から脱退しました');
+        const allowedUserIds = targetChannel?.allowedUsers?.map((user) => {
+            return user?._id;
+        });
+        io.to(allowedUserIds).emit('withdrawn_from_channel', {targetChannel, withDrawnUser});
+        io.to(socket.id).emit('direct_message_removed', targetChannel?._id);
     });
 
     // チャンネル入室
@@ -144,6 +173,7 @@ io.on('connection', (socket) => {
         const allowedUserIds = allowedUsers?.map((user) => {
             return user._id;
         });
+        console.log(allowedUserIds);
         io.to(allowedUserIds).emit('message_sent', newMessage);
             
         // カレントユーザーを除くチャンネル参加者
@@ -230,7 +260,7 @@ io.on('connection', (socket) => {
         console.log('チャンネル滞在者数: ', readUserSockets?.length);
 
         // if (readUserSockets?.length == currentChannel.latestMessage?.readUsers?.length) return;
-        if (currentChannel?.latestMessage?.readUsers.includes(currentUser?._id)) return;
+        if (currentChannel?.latestMessage?.readUsers?.includes(currentUser?._id)) return;
         
         try {
             await Message.updateMany({
@@ -272,7 +302,7 @@ io.on('connection', (socket) => {
                 console.log('--------------------');
                 console.log('通知を消化しました');
 
-                io.to(currentUser?._id).emit('notification_cleared', { 
+                io.to(`${currentUser?._id}`).emit('notification_cleared', { 
                     channelId, 
                     currentUserId: currentUser?._id,
                 });
@@ -288,26 +318,32 @@ io.on('connection', (socket) => {
         console.log('--------------------');
         console.log('接続終了　ID: ', socket.id);
         console.log('reason: ', reason);
-        
-        if (socket?.user) {
-            await User.findOneAndUpdate({ socketId: socket.id }, {
+
+        try {
+            const currentUser = await User.findOneAndUpdate({ socketId: socket.id }, {
                 $set: {
                     online: false,
                     socketId: '',
-                }
+                },
             }, {
                 runValidators: true,
+                new: true,
             });
 
-            console.log(`${socket?.user?.displayName}がオフラインになりました`);
+            console.log(`${currentUser?.displayName}がオフラインになりました`);
 
-            const friendIds = socket?.user?.friends.map((friend) => {
-                return friend?._id;
+            const friendIds = currentUser?.friends?.map((friend) => {
+                return `${friend?._id}`;
             });
+
+            console.log(friendIds);
 
             if (friendIds?.length) {
-                io.to(friendIds).emit('update_online_status', socket.user);
+                io.to(friendIds).emit('update_online_status', currentUser);
             }
+            
+        } catch (err) {
+            console.log(err);
         }
     });
 });

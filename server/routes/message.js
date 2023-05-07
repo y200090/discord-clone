@@ -42,7 +42,10 @@ router.get('/history/:channelId', verify, async (req, res) => {
 
     try {
         const messages = await Message.find({
-            postedChannel: channelId
+            postedChannel: channelId,
+            type: {
+                $ne: 'サンプル',
+            },
         }).populate([
             {path: 'postedChannel', poupulate: {path: 'allowedUsers'}}, 
             'sender', 

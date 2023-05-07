@@ -55,14 +55,10 @@ const MotionForm = ({ redirect, children }) => {
                 } }}
               >
                 {redirect
-                  ? (
-                    <LoginAlert />
-                  )
-                  : (
-                    <>
-                      { children }
-                    </>
-                  )
+                  ? <LoginAlert />
+                  : <>
+                    { children }
+                  </>
                 }
               </Box>
             </AnimatePresence>

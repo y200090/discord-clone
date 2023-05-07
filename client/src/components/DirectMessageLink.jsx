@@ -60,7 +60,7 @@ const DirectMessageLink = ({ directMessage, currentUser }) => {
 
   return (
     <>
-      <Box as={'li'} w='100%' maxW='224px' p='1px 0'>
+      <Box as={'li'} w='100%' maxW='224px' p='1px 0' position='relative'>
         <ChakraLink as={NavLink} to={toURL}
           h='42px' minW='0px' p='0 8px' tabIndex={-1}
           display='flex' alignItems='center' justifyContent='start'
@@ -117,10 +117,11 @@ const DirectMessageLink = ({ directMessage, currentUser }) => {
             </Avatar>
           </Box>
 
-          <Box flex='1 1 auto' minW='0px' color='#949ba4'
-            whiteSpace='nowrap' overflow='hidden' textOverflow='ellipsis'
-          >
-            <Text fontSize='16px' lineHeight='20px' fontWeight='500'>
+          <Box flex='1 1 auto' minW='0px' color='#949ba4'>
+            <Text color={notifications?.length && '#dbdee1'}
+              fontSize='16px' lineHeight='20px' fontWeight='500'
+              whiteSpace='nowrap' overflow='hidden' textOverflow='ellipsis'
+            >
               {title}
             </Text>
             <Text mt='-2px'
@@ -131,9 +132,9 @@ const DirectMessageLink = ({ directMessage, currentUser }) => {
             </Text>
           </Box>
 
-          <Box display={!notifications.length && 'none'}>
+          {/* <Box display={!notifications.length && 'none'}>
             {notifications.length}
-          </Box>
+          </Box> */}
 
           <IconButton aria-label='delete-dm'
             icon={<MdClose size='20px' />} boxSize='20px'
@@ -145,9 +146,17 @@ const DirectMessageLink = ({ directMessage, currentUser }) => {
                 e.preventDefault();
                 onOpen();
               }
-              : handleRemove}
+              : handleRemove
+            }
           />
         </ChakraLink>
+
+        {notifications?.length > 0 &&
+          <Box position='absolute' top='50%' left='-8px'
+            transform='translateY(-50%)' h='8px' w='4px'
+            bg='#f3f4f5' borderRadius='0 4px 4px 0'
+          />
+        }
       </Box>
 
       <AlertWindow {...rest} />
@@ -172,7 +181,8 @@ const AlertWindow = (props) => {
 
       await WithdrawFromChannel({
         channelId: directMessage?._id,
-        currentUserId: currentUser?._id,
+        withDrawnUser: currentUser,
+        isChecked,
       }).unwrap();
 
       // await Promise.all([

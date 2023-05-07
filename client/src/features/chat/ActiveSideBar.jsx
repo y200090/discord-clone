@@ -4,7 +4,6 @@ import React from 'react'
 import { FaCrown, FaDiscord } from 'react-icons/fa'
 
 const ActiveSideBar = ({ isOpen, header, members, owner }) => {
-  
   return (
     <>
       <Flex h='100%' minW={isOpen ? '240px' : '0'} bg='#2b2d31'>
