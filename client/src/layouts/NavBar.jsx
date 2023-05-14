@@ -5,7 +5,7 @@ import { AiOutlinePlus } from 'react-icons/ai'
 import { FaDiscord } from 'react-icons/fa'
 import { IoMdCompass } from 'react-icons/io'
 import { useSelector } from 'react-redux'
-import { CreateServer } from '../features'
+import { CreateServerForm } from '../features'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import NavIcon from '../components/NavIcon'
 import { selectJoinedServers } from '../redux/slices/serverSlice'
@@ -32,10 +32,10 @@ const NavBar = () => {
     }
   });
   const directMessageIds = currentUser?.setDirectMessages?.map((dm) => {
-    return dm._id;
+    return dm?._id;
   });
   const unreadDirectMessages = participatingChannels?.filter((dm) => {
-    return directMessageIds?.includes(dm._id) && dm?.notifications?.length;
+    return directMessageIds?.includes(dm?._id) && dm?.notifications?.length;
   });
   const { isOpen, onOpen, onClose } = useDisclosure();
   const rest = { 
@@ -122,7 +122,7 @@ const NavBar = () => {
                 return (
                   <NavIcon key={server?._id}
                     toURL={`/channels/${server?._id}`}
-                    indexURL={`${server?.ownedChannels[0]._id}`}
+                    indexURL={server?.ownedChannels[0]?.category == 'テキストチャンネル' && `${server?.ownedChannels[0]._id}`}
                     title={server?.title}
                     {...(server?.photoURL 
                       ? {photoURL: server?.photoURL} 
@@ -166,7 +166,7 @@ const NavBar = () => {
         </Box>
       </Box>
 
-      <CreateServer {...rest} />
+      <CreateServerForm {...rest} />
     </>
   )
 }

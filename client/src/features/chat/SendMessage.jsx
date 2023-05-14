@@ -3,17 +3,26 @@ import { css } from '@emotion/react';
 import React, { useRef, useState } from 'react'
 import { MdAddCircle } from 'react-icons/md'
 import { useSelector } from 'react-redux';
-import { useParams } from 'react-router-dom';
 import { usePostMessageMutation } from '../../redux/apis/messageApi';
 import { selectCurrentUser } from '../../redux/slices/userSlice'
 
-const SendMessage = () => {
-  const { channelId } = useParams();
+const SendMessage = ({ currentChannel, friend }) => {
   const currentUser = useSelector(selectCurrentUser);
   const [ PostMessage ] = usePostMessageMutation();
   const [ message, setMessage ] = useState('');
   const textareaRef = useRef();
   const baseHeight = 44;
+  const plainText = `${
+    currentChannel?.directMessage
+      ? currentChannel?.category == 'グループダイレクトメッセージ'
+          ? ''
+          : '@'
+      : currentChannel?.category == 'テキストチャンネル' && '#'
+  }` + `${
+    currentChannel?.category == 'ダイレクトメッセージ'
+      ? friend?.displayName
+      : currentChannel?.title
+  }` + 'へメッセージを送信';
 
   const changeTextarea = (e) => {
     setMessage(e.target.value);
@@ -29,7 +38,11 @@ const SendMessage = () => {
     } 
 
     try {
-      await PostMessage({ currentUser, message, channelId });
+      await PostMessage({ 
+        message, 
+        currentUser, 
+        channelId: currentChannel?._id
+      });
       
     } catch (err) {
       console.log(err);
@@ -68,7 +81,7 @@ const SendMessage = () => {
               fontSize='1rem' lineHeight='1.375rem' fontWeight='4000'
               resize='none' border='none' outline='none'
               focusBorderColor='transparent'
-              placeholder='#一般へメッセージを送信'
+              placeholder={plainText}
               css={css`
                 &::placeholder {
                   color: #6a6b75;

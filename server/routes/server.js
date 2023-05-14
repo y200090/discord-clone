@@ -162,9 +162,7 @@ router.post('/join', verify, async (req, res) => {
             $addToSet: {
                 allowedUsers: currentUserId,
             }
-        }, {
-            runValidators: true,
-        });
+        }, { runValidators: true });
 
         const currentUser = await User.findByIdAndUpdate(currentUserId, {
             $addToSet: {
@@ -193,9 +191,7 @@ router.post('/join', verify, async (req, res) => {
             $set: {
                 latestMessage: newMessage._id,
             },
-        }, {
-            runValidators: true,
-        });
+        }, { runValidators: true });
 
         return res.status(200).json({
             newMessage,
@@ -208,7 +204,7 @@ router.post('/join', verify, async (req, res) => {
     }
 });
 
-// 招待URLを作成・送信
+// 招待URLを作成・DMへ送信
 router.post('/invitation/create', verify, async (req, res) => {
     const { link, currentUserId, friendId } = req.body;
 
@@ -248,9 +244,7 @@ router.post('/invitation/create', verify, async (req, res) => {
             $addToSet: {
                 setDirectMessages: newDirectMessage._id
             }
-        }, { 
-            runValidators: true 
-        });
+        }, { runValidators: true });
 
         return res.status(200).json({newMessage, newDirectMessage});
         
@@ -273,6 +267,42 @@ router.post('/edit/profile', verify, async (req, res) => {
         }, { runValidators: true });
 
         return res.status(200).json('変更を反映しました');
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
+
+// サーバーを削除
+router.delete('/delete', verify, async (req, res) => {
+    const { server, password } = req.body;
+
+    try {
+        if (password !== server?.title) {
+            return res.status(401).json('サーバー名を正しく入力してください。');
+        }
+
+        await Server.findByIdAndDelete(server?._id);
+
+        await Channel.deleteMany({ parentServer: server?._id })
+
+        await User.updateMany({ joinedServers: server?._id }, {
+            $pull: {
+                joinedServers: server?._id,
+            }
+        }, { runValidators: true });
+
+        const ownedChannelIds = server?.ownedChannels?.map((channel) => {
+            return channel?._id;
+        });
+
+        await Message.deleteMany({
+            postedChannel: {
+                $in: ownedChannelIds
+            }
+        });
+        
+        return res.status(200).json(server);
         
     } catch (err) {
         return res.status(500).json(err);

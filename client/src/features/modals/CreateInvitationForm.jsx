@@ -1,4 +1,4 @@
-import { LockIcon, SearchIcon } from '@chakra-ui/icons';
+import { SearchIcon } from '@chakra-ui/icons';
 import { Avatar, Box, Button, Flex, Heading, Icon, Input, InputGroup, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Text } from '@chakra-ui/react'
 import { css } from '@emotion/react';
 import React, { useEffect, useState } from 'react'
@@ -6,22 +6,32 @@ import { BiHash } from 'react-icons/bi'
 import { HiSpeakerWave } from 'react-icons/hi2';
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
-import { FaDiscord } from 'react-icons/fa';
+import { FaDiscord, FaLock } from 'react-icons/fa';
 import { useCreateInvitationMutation } from '../../redux/apis/serverApi';
 import { BsFillExclamationCircleFill } from 'react-icons/bs';
 
 const CreateInvitationForm = (props) => {
   const { isOpen, onClose, channelName, category, privateChannel, server } = props;
   const currentUser = useSelector(selectCurrentUser);
+  const memberIds = server?.members?.map((member) => {
+    return member?._id;
+  });
+  const unparticipatingFriends = currentUser?.friends?.filter((friend) => {
+    return !memberIds?.includes(friend?._id);
+  });
   const [ CreateInvitation, { 
     data, isLoading, isSuccess, reset 
   } ] = useCreateInvitationMutation();
   const [ targetUserIds, setTargetUserIds ] = useState([]);
-
-  const param = `http://localhost:8000/server/join/${server?.invitationLink}`;
+  const [ isCopyComplete, setIsCopyComplete ] = useState(false);
+  const param = `${import.meta.env.VITE_API_URL}/server/join/${server?.invitationLink}`;
 
   const copyTextToClipboard = async () => {
+    setIsCopyComplete((prevState) => !prevState);
     await navigator.clipboard.writeText(param);
+    setTimeout(() => {
+      setIsCopyComplete((prevState) => !prevState);
+    }, 800);
   };
 
   const handleInvitation = async (e) => {
@@ -58,7 +68,7 @@ const CreateInvitationForm = (props) => {
           display='flex' flexDirection='column'
         >
           <ModalHeader flex='0 0 auto' p='16px'
-            boxShadow={!privateChannel && '0 1px 0 0 #222328'}
+            boxShadow={!privateChannel && unparticipatingFriends?.length && '0 1px 0 0 #222328'}
           >
             <Box>
               <Heading color='#f2f3f5' mb='4px'
@@ -68,14 +78,14 @@ const CreateInvitationForm = (props) => {
                 フレンドを<strong>{server?.title}</strong>に招待する
               </Heading>
               <Flex align='center' justify='flex-start'
-                mb='4px' color='#b5bac1'
+                mb='6px' color='#b5bac1'
               >
                 <Box h='23px' position='relative'>
                   <Icon 
                     as={category === 'テキストチャンネル' ? BiHash : HiSpeakerWave} boxSize='23px' m='3.5px 8px 0.5px 0'
                   />
                   {privateChannel &&
-                    <LockIcon boxSize='7px'
+                    <Icon as={FaLock} boxSize='7px'
                       position='absolute' top='6px' left='14px' 
                       bg='#313338' outline='2px solid #313338'
                     />
@@ -102,9 +112,7 @@ const CreateInvitationForm = (props) => {
                 </>
                 : (
                   <Flex m='12px 0 8px 0' p='4px' borderRadius='4px' bg='#1e1f22'>
-                    <InputGroup display='flex' alignItems='center'
-                      flex='1 1 auto' p='1px'
-                    >
+                    <InputGroup display='flex' alignItems='center' flex='1 1 auto' p='1px'>
                       <Input type='text' id='user-search'
                         flex='1 1 0%' h='20px' m='1px' p='0 4px'
                         fontSize='14px' lineHeight='20px' fontWeight='500'
@@ -132,7 +140,7 @@ const CreateInvitationForm = (props) => {
           />
 
           <ModalBody maxH='200px' p='8px 0 16px 12px' flex='1 1 auto'
-            display={privateChannel && 'none'}
+            display={(privateChannel || !unparticipatingFriends?.length) && 'none'}
             overflow='hidden scroll'
             css={css`
               &::-webkit-scrollbar {
@@ -146,7 +154,7 @@ const CreateInvitationForm = (props) => {
               }
             `}
           >
-            {currentUser?.friends?.map((friend) => (
+            {unparticipatingFriends?.map((friend) => (
               <Flex key={friend?._id}
                 align='center' justify='space-between'
                 h='44px' w='100%' p='7px 6px 7px 8px'
@@ -175,9 +183,7 @@ const CreateInvitationForm = (props) => {
                     )}
                   />
                   <Box color='#f9f9f9'
-                    overflow='hidden' 
-                    whiteSpace='nowrap' 
-                    textOverflow='ellipsis'
+                    overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
                     fontSize='16px' fontWeight='400' lineHeight='20px'
                   >
                     {friend?.displayName}
@@ -206,8 +212,7 @@ const CreateInvitationForm = (props) => {
                       ? '送信済み' : '招待'
                     )
                     : (targetUserIds.includes(friend?._id)
-                      ? '送信済み'
-                      : '招待'
+                      ? '送信済み' : '招待'
                     )
                   }
                 </Button>
@@ -217,7 +222,7 @@ const CreateInvitationForm = (props) => {
 
           <ModalFooter flex='0 0 auto' zIndex={1}
             p={privateChannel ? '0 16px 20px' : '16px'} 
-            boxShadow={!privateChannel && 'inset 0 1px 0 #2e2f33'}
+            boxShadow={!privateChannel && unparticipatingFriends?.length && 'inset 0 1px 0 #2e2f33'}
           >
             <Flex direction='column' w='100%'>
               {privateChannel
@@ -241,18 +246,21 @@ const CreateInvitationForm = (props) => {
               >
                 <Input type='text' id='invitationURL' 
                   isReadOnly value={param}
-                  flexGrow={1} h='40px' w='100%' p='10px' 
+                  flexGrow={1} h='40px' w='auto' p='10px' 
                   border='transparent' bg='transparent' color='#dbdee1'
                   fontSize='16px' fontWeight='400'
                 />
                 <Button
-                  h='32px' minH='32px' w='75px' minW='60px' mr='4px'
-                  bg='#5865f2' color='#fff' borderRadius='3px'
+                  h='32px' minH='32px' w='75px' minW='60px' 
+                  display='block' p='2px 16px' mr='4px'
+                  bg={isCopyComplete ? '#248046' : '#5865f2'} 
+                  color='#fff' borderRadius='3px'
                   fontSize='14px' lineHeight='16px' fontWeight='500'
-                  _hover={{ bg: '#4752c4' }}
+                  overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
+                  _hover={{ bg: isCopyComplete ? '#1a6334' : '#4752c4' }}
                   onClick={copyTextToClipboard}
                 >
-                  コピー
+                  {isCopyComplete ? 'コピーしました' : 'コピー'}
                 </Button>
               </Flex>
               {/* <Text color='#b5bac1' mt='8px'

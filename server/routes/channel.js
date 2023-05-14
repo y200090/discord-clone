@@ -36,9 +36,7 @@ router.post('/create', verify, async (req, res) => {
             $addToSet: {
                 ownedChannels: newChannel._id
             }
-        }, { 
-            runValidators: true 
-        });
+        }, { runValidators: true });
 
         return res.status(200).json(newChannel);
         
@@ -68,6 +66,7 @@ router.get('/info/:channelId', verify, async (req, res) => {
     }
 });
 
+// 参加チャンネルを取得
 router.get('/participating-channels/:userId', verify, async (req, res) => {
     const userId = req.params.userId;
 
@@ -113,9 +112,7 @@ router.post('/add/direct-message', verify, async (req, res) => {
             $addToSet: {
                 setDirectMessages: DM._id
             }
-        }, { 
-            runValidators: true 
-        });
+        }, { runValidators: true });
         
         return res.status(200).json(DM);
         
@@ -133,9 +130,7 @@ router.post('/remove/direct-message', verify, async (req, res) => {
             $pull: {
                 setDirectMessages: directMessageId
             }
-        }, { 
-            runValidators: true 
-        });
+        }, { runValidators: true });
 
         return res.status(200).json(directMessageId);
         
@@ -195,9 +190,7 @@ router.post('/create/group-direct-message', verify, async (req, res) => {
             $addToSet: {
                 setDirectMessages: newGroupDirectMessage._id
             }
-        }, { 
-            runValidators: true 
-        });
+        }, { runValidators: true });
 
         return res.status(200).json(newGroupDirectMessage);
         
@@ -206,6 +199,72 @@ router.post('/create/group-direct-message', verify, async (req, res) => {
     }
 });
 
+// グループＤＭの招待を受諾
+router.post('/recieve-invitation/direct-message', verify, async (req, res) => {
+    const { channelId, currentUser, targetUsers } = req.body;
+    const targetUserIds = targetUsers?.map((user) => {
+        return user._id;
+    });
+    const targetUserDisplayNames = targetUsers.map((user) => {
+        return user.displayName;
+    });
+
+    try {
+        let directMessage = await Channel.findByIdAndUpdate(channelId, {
+            $addToSet: {
+                allowedUsers: targetUserIds
+            }
+        }, {
+            runValidators: true,
+            new: true,
+        });
+        
+        await User.updateMany({
+            _id: {
+                $in: [
+                    ...targetUserIds
+                ]
+            }
+        }, {
+            $addToSet: {
+                setDirectMessages: channelId
+            }
+        }, { runValidators: true });
+
+        let newMessage = await Message.create({
+            postedChannel: channelId, 
+            type: 'アナウンス',
+            body: `${currentUser?.displayName}が${targetUserDisplayNames.join(', ')}を招待しました。`,
+            sender: currentUser?._id,
+            readUsers: [currentUser?._id]
+        });
+
+        newMessage = await newMessage.populate([
+            {path: 'postedChannel', populate: {path: 'allowedUsers'}}, 
+            {path: 'sender'}, 
+            {path: 'readUsers'}
+        ]);
+
+        directMessage.latestMessage = newMessage?._id;
+        directMessage = await directMessage.save();
+        directMessage = await directMessage.populate([
+            {path: 'allowedUsers'},
+            {path: 'latestMessage'},
+        ]);
+
+        return res.status(200).json({
+            targetUsers, 
+            currentUser,
+            directMessage,
+            newMessage,
+        });
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
+
+// チャンネルから脱退
 router.post('/withdraw', verify, async (req, res) => {
     const { channelId, withDrawnUser, isChecked } = req.body;
     
@@ -256,6 +315,22 @@ router.post('/withdraw', verify, async (req, res) => {
             targetChannel,
             withDrawnUser,
         });
+        
+    } catch (err) {
+        return res.status(500).json(err);
+    }
+});
+
+// チャンネル削除
+router.delete('/delete', verify, async (req, res) => {
+    const { channel } = req.body;
+
+    try {
+        await Channel.findByIdAndDelete(channel?._id);
+
+        await Message.deleteMany({ postedChannel: channel?._id });
+
+        return res.status(200).json(channel);
         
     } catch (err) {
         return res.status(500).json(err);

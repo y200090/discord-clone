@@ -1,13 +1,19 @@
-import { Box, Flex, Heading, IconButton, Modal, ModalContent, Tab, TabList, TabPanel, TabPanels, Tabs } from '@chakra-ui/react';
+import { Box, Flex, Heading, Icon, IconButton, Modal, ModalContent, Tab, TabList, TabPanel, TabPanels, Tabs, Text } from '@chakra-ui/react';
 import { css } from '@emotion/react';
 import React from 'react'
+import { BiHash } from 'react-icons/bi';
+import { FaLock } from 'react-icons/fa';
 import { SlClose } from 'react-icons/sl'
-import { Logout, MyAccount, Profile } from '../features';
 
 const Settings = (props) => {
-  const { isOpen, onClose, currentUser } = props;
-  const tabTitles = ['マイアカウント', 'プロフィール'];
-  
+  const { isOpen, onClose, type, tabItems, Logout, DeleteServer, DeleteChannel, channel } = props;
+  const children = [];
+  Object.values(tabItems).forEach((tabItem) => {
+    Object.values(tabItem).forEach((item) => {
+      children.push(item);
+    });
+  });
+
   return (
     <>
       <Modal isOpen={isOpen} onClose={onClose} size='full' motionPreset='scale' scrollBehavior='inside'>
@@ -34,50 +40,66 @@ const Settings = (props) => {
                   }
                 `}
               >
-                <Flex as={'nav'} direction='column'
-                  h='100%' w='218px' p='60px 6px 60px 20px'
-                >
-                  <Heading flexShrink={0} color='#949ba4'
-                    p='0px 10px 6px 10px'
-                    whiteSpace='nowrap' 
-                    overflow='hidden' 
-                    textOverflow='ellipsis'
-                    fontSize='12px' lineHeight='16px' fontWeight='700'
-                    cursor='default'
-                  >
-                    ユーザー設定
-                  </Heading>
-                  
-                  <TabList flexDirection='column'>
-                    {tabTitles.map((tabTitle) => (
-                      <Tab key={tabTitle}
-                        w='100%' p='6px 10px' mb='2px'
-                        justifyContent='start'
-                        flexShrink={0}
-                        color='#b5bac1'
-                        borderRadius='4px'
-                        fontSize='16px'
-                        lineHeight='20px'
-                        fontWeight='500'
-                        overflow='hidden'
-                        whiteSpace='nowrap'
-                        textOverflow='ellipsis'
-                        _hover={{ color: '#f2f3f5', bg: '#35373c' }}
-                        _selected={{ 
-                          color: '#f2f3f5',
-                          bg: '#404249',
-                          _hover: { bg: '#35373c' }
-                        }}
-                      >
-                        {tabTitle}
-                      </Tab>
+                <Flex as={'nav'} direction='column' h='100%' w='218px' p='60px 6px 60px 20px'>
+                  <TabList flexDirection='column' w='100%'>
+                    {Object.keys(tabItems).map((tabHeader, i) => (
+                      <Flex key={tabHeader} direction='column'>
+                        <Heading flexShrink={0} display='flex' flexWrap='wrap' cursor='default' 
+                          color='#949ba4' p='0px 10px 6px 10px' textTransform='uppercase'
+                          whiteSpace='nowrap' overflow='hidden' textOverflow='ellipsis'
+                          fontSize='12px' lineHeight='16px' fontWeight='700'
+                        >
+                          {type === 'チャンネル設定' && (
+                            <Flex as={'span'} align='center' h='100%' mr='2px' position='relative'>
+                              <Icon as={BiHash} boxSize='13px'/>
+                              {channel?.privateChannel &&
+                                <Icon as={FaLock} boxSize='4px' 
+                                  position='absolute' top='4px' left='8px' 
+                                  bg='#2b2d31' outline='1.5px solid #2b2d31' 
+                                />
+                              }
+                            </Flex>
+                          )}
+                          <Text as={'span'}>
+                            {tabHeader}
+                          </Text>
+                          {type === 'チャンネル設定' && (
+                            <Text as={'span'} ml='4px' color='#b5bac1'
+                              textTransform='uppercase'
+                            >
+                              {channel?.category}
+                            </Text>
+                          )}
+                        </Heading>
+                        {Object.keys(tabItems[tabHeader]).map((tabTitle) => (
+                          <Tab key={tabTitle}
+                            w='100%' p='6px 10px' mb='2px'
+                            justifyContent='start' flexShrink={0}
+                            color='#b5bac1' borderRadius='4px'
+                            fontSize='16px' lineHeight='20px' fontWeight='500'
+                            overflow='hidden' whiteSpace='nowrap' textOverflow='ellipsis'
+                            _hover={{ color: '#f2f3f5', bg: '#35373c' }}
+                            _selected={{ 
+                              color: '#f2f3f5',
+                              bg: '#404249',
+                              _hover: { bg: '#35373c' }
+                            }}
+                          >
+                            {tabTitle}
+                          </Tab>
+                        ))}
+                        <Box h='1px' m='8px 10px' bg='#3b3d44' />
+                        {(i === Object.keys(tabItems).length - 1) && (
+                          type === 'ユーザー設定'
+                            ? Logout
+                            : type === 'サーバー設定'
+                              ? DeleteServer
+                              : type === 'チャンネル設定'
+                                && DeleteChannel
+                        )}
+                      </Flex>
                     ))}
                   </TabList>
-
-                  <Box h='1px' m='8px 10px' bg='#3b3d44' />
-
-                  <Logout />
-
                 </Flex>
               </Flex>
             </Flex>
@@ -105,13 +127,11 @@ const Settings = (props) => {
                 `}
               >
                 <TabPanels flex='1 1 auto' minH='100%' maxW='740px'>
-                  <TabPanel p='0'>
-                    <MyAccount currentUser={currentUser} />
-                  </TabPanel>
-
-                  <TabPanel p='60px 10px 80px 40px'>
-                    <Profile currentUser={currentUser} />
-                  </TabPanel>
+                  {children?.map((child) => (
+                    <TabPanel key={child.key} p='0'>
+                      {child}
+                    </TabPanel>
+                  ))}
                 </TabPanels>
                 
                 <Box flex='0 0 36px'

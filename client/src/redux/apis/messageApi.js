@@ -49,9 +49,22 @@ export const messageApi = apiSlice.injectEndpoints({
             });
           });
 
+          socket.on('unreadMessages_cleared', ({ currentUser, unreadMessages }) => {
+            updateCachedData((draft) => {
+              unreadMessages?.forEach((unreadMessage) => {
+                let index = draft.messages.findIndex((item) => {
+                  return item?._id == unreadMessage?._id;
+                });
+                if (index == -1) return;
+                draft.messages[index].readUsers.push(currentUser);
+              });
+            });
+          });
+
           await cacheEntryRemoved;
 
           socket.off('message_sent');
+          socket.off('unreadMessages_cleared');
           
         } catch (err) {
           console.log(err);

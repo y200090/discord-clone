@@ -7,15 +7,15 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { discordIcon, categories } from '../../assets'
 import { MdOutlineArrowForwardIos } from 'react-icons/md'
 import { IoMdCamera, IoMdCompass } from 'react-icons/io'
-import { useServerCreationMutation } from '../../redux/apis/serverApi';
+import { useCreateServerMutation } from '../../redux/apis/serverApi';
 import { useForm } from 'react-hook-form';
 import { BiChevronRight } from 'react-icons/bi';
 
-const CreateServer = ({ isOpen, onClose, currentUser }) => {
-  const [ ServerCreation, { 
+const CreateServerForm = ({ isOpen, onClose, currentUser }) => {
+  const [ CreateServer, { 
     isLoading, 
     isSuccess 
-  }] = useServerCreationMutation();
+  } ] = useCreateServerMutation();
   const navigate = useNavigate();
   const {
     register,
@@ -64,7 +64,12 @@ const CreateServer = ({ isOpen, onClose, currentUser }) => {
     e.preventDefault();
     
     try {
-      const newServer = await ServerCreation({ serverName, photoURL, category, currentUser }).unwrap();
+      const newServer = await CreateServer({ 
+        serverName, 
+        photoURL, 
+        category, 
+        currentUser 
+      }).unwrap();
       console.log(newServer);
       onClose();
       setProgress(0);
@@ -403,4 +408,4 @@ const WarningStar = styled.span`
   margin-left: 4px;
 `;
 
-export default CreateServer
+export default CreateServerForm

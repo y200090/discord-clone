@@ -3,7 +3,7 @@ import { apiSlice } from '../slices/apiSlice';
 
 export const serverApi = apiSlice.injectEndpoints({
     endpoints: (builder) => ({
-        ServerCreation: builder.mutation({
+        CreateServer: builder.mutation({
             query: (body) => ({
                 url: '/server/create',
                 method: 'POST',
@@ -81,13 +81,33 @@ export const serverApi = apiSlice.injectEndpoints({
                 }
             }
         }),
-        ServerEditProfile: builder.mutation({
+        // ServerEditProfile: builder.mutation({
+        //     query: (body) => ({
+        //         url: '/server/edit/profile',
+        //         method: 'POST',
+        //         body
+        //     }),
+        //     invalidatesTags: ['Server', 'User']
+        // }),
+        DeleteServer: builder.mutation({
             query: (body) => ({
-                url: '/server/edit/profile',
-                method: 'POST',
-                body
+                url: '/server/delete',
+                method: 'DELETE',
+                body,
             }),
-            invalidatesTags: ['Server', 'User']
+            async onQueryStarted(
+                arg,
+                { queryFulfilled }
+            ) {
+                try {
+                    const { data: server } = await queryFulfilled;
+
+                    socket.emit('delete_server', server);
+                    
+                } catch (err) {
+                    console.log(err);
+                }
+            }
         }),
         getServerInfo: builder.query({
             query: (serverId) => ({
@@ -107,10 +127,11 @@ export const serverApi = apiSlice.injectEndpoints({
 });
 
 export const { 
-    useServerCreationMutation, 
+    useCreateServerMutation, 
     useJoinServerMutation, 
     useCreateInvitationMutation, 
-    useServerEditProfileMutation, 
+    // useServerEditProfileMutation, 
+    useDeleteServerMutation,
     useGetServerInfoQuery, 
     // useGetServerInvitationLinkQuery,
 } = serverApi;

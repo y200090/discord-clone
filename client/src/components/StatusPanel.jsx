@@ -6,6 +6,7 @@ import { css } from '@emotion/react';
 import { FaDiscord } from 'react-icons/fa';
 import { SettingsIcon } from '@chakra-ui/icons';
 import Settings from '../layouts/Settings';
+import { Logout, MyAccount, Profile } from '../features';
 
 const StatusPanel = ({ currentUser }) => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -17,7 +18,14 @@ const StatusPanel = ({ currentUser }) => {
   const rest = { 
     isOpen: isOpen, 
     onClose: onClose, 
-    currentUser: currentUser,
+    type: 'ユーザー設定',
+    tabItems: {
+      'ユーザー設定': {
+        'マイアカウント': <MyAccount key='マイアカウント' currentUser={currentUser} />,
+        'プロフィール': <Profile key='プロフィール' currentUser={currentUser} />,
+      },
+    },
+    Logout: <Logout />,
   };
 
   const copyTextToClipboard = async () => {
@@ -81,8 +89,7 @@ const StatusPanel = ({ currentUser }) => {
           <Flex flex='0 1 auto'>
             <Tooltip label={isMute.microphone ? 'マイクミュート解除' : 'マイクミュート'}
               hasArrow placement='top' closeOnClick={false}
-              bg='#111214' color='#e0e1e5'
-              p='5px 10px' borderRadius='4px'
+              bg='#111214' color='#e0e1e5' p='5px 10px' borderRadius='4px'
             >
               <Box position='relative'>
                 <IconButton aria-label='マイクミュート'
@@ -98,28 +105,22 @@ const StatusPanel = ({ currentUser }) => {
                     (prevState) => ({...prevState, microphone: !prevState.microphone})
                   )}
                 />
-                <Box position='absolute' top='20%' left='50%'
-                  transform='translate(-20%, -50%)'
+                <Box position='absolute' pointerEvents='none'
+                  top='20%' left='50%' transform='rotate(45deg)'
                   h='70%' w='2px' bg='#f23f42'
                   borderRadius='12px' outline='2px solid #232428'
-                  pointerEvents='none'
                   display={isMute.microphone ? 'block' : 'none'}
-                  css={css` 
-                    transform: rotate(45deg); 
-                  `}
                 />
               </Box>
             </Tooltip>
             <Tooltip label={isMute.speaker ? 'スピーカーミュート解除' : 'スピーカーミュート'}
               hasArrow placement='top' closeOnClick={false}
-              bg='#111214' color='#e0e1e5'
-              p='5px 10px' borderRadius='4px'
+              bg='#111214' color='#e0e1e5' p='5px 10px' borderRadius='4px'
             >
               <Box position='relative'>
                 <IconButton aria-label='スピーカーミュート'
                   icon={<BsHeadphones size='21px' />} size={'sm'}
-                  color='#b5bac1' bg='transparent'
-                  borderRadius='4px'
+                  color='#b5bac1' bg='transparent' borderRadius='4px'
                   _hover={{ 
                     bg: '#3d3e45',
                     '& + div': {
@@ -130,27 +131,20 @@ const StatusPanel = ({ currentUser }) => {
                     (prevState) => ({...prevState, speaker: !prevState.speaker})
                   )}
                 />
-                <Box position='absolute' top='20%' left='50%'
-                  transform='translate(-20%, -50%)'
+                <Box position='absolute' pointerEvents='none'
+                  top='20%' left='50%' transform='rotate(45deg)'
                   h='70%' w='2px' bg='#f23f42'
                   borderRadius='12px' outline='2px solid #232428'
-                  pointerEvents='none'
                   display={isMute.speaker ? 'block' : 'none'}
-                  css={css` 
-                    transform: rotate(45deg); 
-                  `}
                 />
               </Box>
             </Tooltip>
-            <Tooltip label='ユーザー設定'
-              hasArrow placement='top'
-              bg='#111214' color='#e0e1e5'
-              p='5px 10px' borderRadius='4px'
+            <Tooltip label='ユーザー設定' hasArrow placement='top'
+              bg='#111214' color='#e0e1e5' p='5px 10px' borderRadius='4px'
             >
               <IconButton aria-label='ユーザー設定'
                 icon={<SettingsIcon boxSize='21px' p='2px' />} size={'sm'}
-                color='#b5bac1' bg='transparent'
-                borderRadius='4px'
+                color='#b5bac1' bg='transparent' borderRadius='4px'
                 _hover={{ bg: '#3d3e45' }}
                 onClick={onOpen}
               />

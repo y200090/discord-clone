@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import Loading from './Loading';
 import { selectCredential } from '../redux/slices/authSlice';
 import { useGetCredentialQuery } from '../redux/apis/authApi';
@@ -15,8 +15,10 @@ import { useGetParticipatingChannelsQuery } from '../redux/apis/channelApi';
 import { setParticipatingChannels } from '../redux/slices/channelSlice';
 
 const ProtectedRoute = () => {
+  const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch();
+  const { serverId, channelId } = useParams();
   // const [ cookies ] = useCookies(['logged_in']);
   const {
     isLoading: isLoadingByCredential, 
@@ -62,6 +64,13 @@ const ProtectedRoute = () => {
   useEffect(() => {
     if (joinedServers) {
       dispatch(setJoinedServers(joinedServers));
+
+      let flag = joinedServers?.findIndex((server) => {
+        return server?._id == serverId;
+      });
+      if (flag == -1 && serverId) {
+        navigate('/channels/@me');
+      }
     }
   }, [joinedServers]);
 
@@ -79,6 +88,13 @@ const ProtectedRoute = () => {
   useEffect(() => {
     if (participatingChannels) {
       dispatch(setParticipatingChannels(participatingChannels));
+
+      let flag = participatingChannels?.findIndex((channel) => {
+        return channel?._id == channelId;
+      });
+      if (flag == -1) {
+        navigate('/channels/@me');
+      }
     }
   }, [participatingChannels]);
 

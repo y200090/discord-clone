@@ -6,7 +6,7 @@ import { MdAdd } from 'react-icons/md'
 import { useSelector } from 'react-redux'
 import { NavLink, Outlet } from 'react-router-dom'
 import { selectCurrentUser } from '../redux/slices/userSlice'
-import CreateDirectMessage from '../features/modals/CreateDirectMessageForm'
+import AddDirectMessageForm from '../features/modals/AddDirectMessageForm'
 import { DirectMessageLink, SkeletonBox, StatusPanel } from '../components'
 import { selectParticipatingChannels } from '../redux/slices/channelSlice'
 import styled from '@emotion/styled'
@@ -145,7 +145,7 @@ const Main = () => {
         <Outlet />
       </Flex>
 
-      <CreateDirectMessage {...rest} />
+      <AddDirectMessageForm {...rest} />
     </>
   )
 };

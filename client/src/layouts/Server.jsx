@@ -9,9 +9,10 @@ import { IoClose } from 'react-icons/io5'
 import { useSelector } from 'react-redux'
 import { selectCurrentUser } from '../redux/slices/userSlice'
 import { ChannelLink, StatusPanel } from '../components'
-import { CreateChannelForm, CreateInvitationForm } from '../features'
+import { CreateChannelForm, CreateInvitationForm, DeleteServer, Member, ServerOverview } from '../features'
 import { selectJoinedServers } from '../redux/slices/serverSlice'
 import { selectParticipatingChannels } from '../redux/slices/channelSlice'
+import Settings from './Settings'
 
 const Server = () => {
   const { serverId, channelId } = useParams();
@@ -20,27 +21,32 @@ const Server = () => {
   const currentServer = joinedServers?.filter((server) => {
     return server?._id == serverId;
   });
-  const ownedChannelIds = currentServer[0]?.ownedChannels?.map((channel) => {
-    return channel?._id;
-  });
+  console.log('カレントサーバー: ', currentServer[0]);
+  // const ownedChannelIds = currentServer[0]?.ownedChannels?.map((channel) => {
+  //   return channel?._id;
+  // });
   const participatingChannels = useSelector(selectParticipatingChannels);
   const ownedChannels = participatingChannels?.filter((channel) => {
-    return ownedChannelIds?.includes(channel?._id);
+    // return ownedChannelIds?.includes(channel?._id);
+    let flag = currentServer[0]?.ownedChannels?.findIndex((item) => {
+      return item?._id === channel?._id;
+    });
+    if (flag > -1) return true;
+    else return false;
   });
   const navigate = useNavigate();
   const [ isModalOpen, setIsModalOpen ] = useState('');
   const [ arisingFrom, setArisingFrom ] = useState('');
   const [ isTextChannelOpen, setIsTextChannelOpen ] = useState(true);
   const [ isVoiceChannelOpen, setIsVoiceChannelOpen ] = useState(true);
-  
+
   const createChannelFormRest = {
     isOpen: isModalOpen === 'createChannel',
     onClose: () => setIsModalOpen(''),
     arisingFrom: arisingFrom,
     server: currentServer[0],
-    currentUser: currentUser,
+    currentUserId: currentUser?._id,
   };
-
   const createInvitationFormRest = {
     isOpen: isModalOpen === 'createInvitationForm',
     onClose: () => setIsModalOpen(''),
@@ -48,11 +54,27 @@ const Server = () => {
     category: 'テキストチャンネル',
     server: currentServer[0],
   };
+  const serverSettingsRest = {
+    isOpen: isModalOpen === 'serverSettings',
+    onClose: () => setIsModalOpen(''),
+    type: 'サーバー設定',
+    tabItems: {
+      [`${currentServer[0]?.title}`]: {
+        '概要': <ServerOverview key='概要' server={currentServer[0]} />,
+      },
+      'ユーザー管理': {
+        'メンバー': <Member key='メンバー' server={currentServer[0]} />,
+      }
+    },
+    DeleteServer: <DeleteServer server={currentServer[0]} />,
+  };
 
   useEffect(() => {
     if (!channelId) {
       if (currentServer[0]?.length) {
-        navigate(`${currentServer[0]?.ownedChannels[0]}`);
+        if (currentServer[0].ownedChannels[0]?.category == 'テキストチャンネル') {
+          navigate(`${currentServer[0]?.ownedChannels[0]}`);
+        }
       }
     }
   }, [channelId, currentServer]);
@@ -128,17 +150,19 @@ const Server = () => {
                 </Text>
                 <Icon as={MdPersonAddAlt1} boxSize='18px' ml='8px' />
               </Button>
-              <Button justifyContent='space-between'
-                h='auto' minH='32px' p='6px 8px' m='2px 0' 
-                bg='transparent' color='#b5bac1' borderRadius='2px'
-                _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
-                onClick={() => console.log('click')}
-              >
-                <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
-                  サーバー設定
-                </Text>
-                <SettingsIcon boxSize='18px' p='1px' />
-              </Button>
+              {currentServer[0]?.owner?._id == currentUser?._id &&
+                <Button justifyContent='space-between'
+                  h='auto' minH='32px' p='6px 8px' m='2px 0' 
+                  bg='transparent' color='#b5bac1' borderRadius='2px'
+                  _hover={{ bg: '#4752c4', color: '#f6f6fc' }}
+                  onClick={() => setIsModalOpen('serverSettings')}
+                >
+                  <Text fontSize='14px' fontWeight='500' lineHeight='18px'>
+                    サーバー設定
+                  </Text>
+                  <SettingsIcon boxSize='18px' p='1px' />
+                </Button>
+              }
               <Button justifyContent='space-between'
                 h='auto' minH='32px' p='6px 8px' m='2px 0' 
                 bg='transparent' color='#b5bac1' borderRadius='2px'
@@ -315,6 +339,7 @@ const Server = () => {
 
       <CreateChannelForm {...createChannelFormRest} />
       <CreateInvitationForm {...createInvitationFormRest} />
+      <Settings {...serverSettingsRest} />
     </>
   )
 }

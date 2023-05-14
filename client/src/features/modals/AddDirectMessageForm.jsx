@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAddDirectMessageMutation, useCreateGroupDirectMessageMutation } from '../../redux/apis/channelApi';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
 
-const CreateDirectMessageForm = ({ isOpen, onClose }) => {
+const AddDirectMessageForm = ({ isOpen, onClose }) => {
   const currentUser = useSelector(selectCurrentUser);
   const friends = currentUser?.friends;
   const [ AddDirectMessage ] = useAddDirectMessageMutation();
@@ -241,4 +241,4 @@ const responsiveModal = css`
   }
 `;
 
-export default CreateDirectMessageForm
+export default AddDirectMessageForm

@@ -1,10 +1,11 @@
 import { Avatar, AvatarBadge, Box, Button, Checkbox, Flex, FormLabel, Heading, Icon, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalContent, ModalHeader, Text } from '@chakra-ui/react'
 import { css } from '@emotion/react';
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux';
 import { selectCurrentUser } from '../../redux/slices/userSlice';
 import { FaDiscord } from 'react-icons/fa';
 import { MdOutlineClose } from 'react-icons/md';
+import { useRecieveInvitationFromDirectMessageMutation } from '../../redux/apis/channelApi';
 
 const InviteDirectMessageForm = ({ isOpen, onClose, currentChannel }) => {
   const currentUser = useSelector(selectCurrentUser);
@@ -12,14 +13,22 @@ const InviteDirectMessageForm = ({ isOpen, onClose, currentChannel }) => {
     return user?._id;
   });
   const friends = currentUser?.friends?.filter((friend) => {
-    return allowedUserIds?.includes(friend?._id);
+    return !allowedUserIds?.includes(friend?._id);
   });
   const [ username, setUsername ] = useState('');
   const [ targetUsers, setTargetUsers ] = useState([]);
   const targetUserIds = targetUsers?.map((user) => {
     return user?._id;
   });
+  const [ RecieveInvitationFromDirectMessage ] = useRecieveInvitationFromDirectMessageMutation();
 
+  useEffect(() => {
+    return () => {
+      setUsername('');
+      setTargetUsers([]);
+    };
+  }, [isOpen]);
+  
   const handleSearch = (e) => {
     setUsername(e.target.value);
   };
@@ -36,9 +45,13 @@ const InviteDirectMessageForm = ({ isOpen, onClose, currentChannel }) => {
     }
   };
 
-  const handleInviteDirectMessage = (e) => {
+  const handleInviteDirectMessage = async () => {
     try {
-
+      await RecieveInvitationFromDirectMessage({
+        channelId: currentChannel?._id,
+        currentUser,
+        targetUsers,
+      }).unwrap();
       
     } catch (err) {
       console.log(err);
@@ -66,7 +79,7 @@ const InviteDirectMessageForm = ({ isOpen, onClose, currentChannel }) => {
                 <InputGroup flex='1 1 auto' alignItems='center'>
                   <InputLeftElement position='relative' h='30px' w='auto'>
                     {targetUsers?.map((selectUser) => (
-                      <Button
+                      <Button key={selectUser?._id}
                         h='30px' w='auto' p='0 8px' m='1px'
                         bg='#313338' color='#dbdee1'
                         borderRadius='2px'

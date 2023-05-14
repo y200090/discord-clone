@@ -2,11 +2,21 @@ const router = require('express').Router();
 const Message = require('../models/Message');
 const verify = require('../middleware/verify');
 const Channel = require('../models/Channel');
+const Server = require('../models/Server');
 
 // メッセージ送信
 router.post('/post', verify, async (req, res) => {
     const { currentUser, message, channelId } = req.body;
 
+    let pattern = /^https?:\/\/[^\s/$.?#].[^\s]*$/i;
+    let match;
+    if (pattern.test(message)) {
+        const baseUrl = process.env.SERVER_API_URL;
+        const path = 'server/join';
+        pattern = new RegExp(`^${baseUrl}/${path}/(.*)$`);
+        match = message.match(pattern);
+    }
+    
     try {
         let newMessage = await Message.create({
             postedChannel: channelId,
@@ -20,6 +30,15 @@ router.post('/post', verify, async (req, res) => {
             'sender', 
             'readUsers'
         ]);
+
+        if (match) {
+            const invitationLink = match[1];
+            const flag = await Server.findOne({invitationLink});
+            if (flag) {
+                newMessage.type = '招待リンク';
+                newMessage = await newMessage.save();
+            }
+        }
 
         await Channel.findByIdAndUpdate(channelId, {
             $set: {

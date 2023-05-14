@@ -130,21 +130,46 @@ export const userApi = apiSlice.injectEndpoints({
                         });
                     });
 
-                    socket.on('new_channel_created', (newChannel) => {
+                    socket.on('new_channel_created', (newChannels) => {
+                        updateCachedData((draft) => {
+                            newChannels?.forEach((newChannel) => {
+                                let index = draft.findIndex((item) => {
+                                    return item._id == newChannel?.parentServer?._id;
+                                });
+                                console.log(index);
+                                if (index == -1) return;
+                                
+                                let flag = draft[index].ownedChannels.findIndex((item) => {
+                                    return item._id == newChannel._id;
+                                });
+                                console.log(flag)
+                                if (flag != -1) return;
+                                
+                                draft[index].ownedChannels.push(newChannel);
+                            });
+                        });
+                    });
+
+                    socket.on('server_deleted', (server) => {
                         updateCachedData((draft) => {
                             let index = draft.findIndex((item) => {
-                                return item._id == newChannel?.parentServer?._id;
+                                return item._id == server?._id;
                             });
-                            console.log(index);
+                            draft.splice(index, 1);
+                        });
+                    });
+
+                    socket.on('channel_deleted', (channel) => {
+                        updateCachedData((draft) => {
+                            let index = draft.findIndex((item) => {
+                                return item?._id == channel?.parentServer?._id;
+                            });
                             if (index == -1) return;
-
-                            let flag = draft[index].ownedChannels.findIndex((item) => {
-                                return item._id == newChannel._id;
+                            let number = draft[index]?.ownedChannels?.findIndex((item) => {
+                                return item?._id == channel?._id;
                             });
-                            console.log(flag)
-                            if (flag != -1) return;
-
-                            draft[index].ownedChannels.push(newChannel);
+                            if (number == -1) return;
+                            draft[index]?.ownedChannels?.splice(number, 1);
                         });
                     });
 
@@ -152,6 +177,8 @@ export const userApi = apiSlice.injectEndpoints({
 
                     socket.off('new_server_created');
                     socket.off('new_channel_created');
+                    socket.off('server_deleted');
+                    socket.off('channel_deleted');
                     
                 } catch (err) {
                     console.log(err);

@@ -12,3 +12,5 @@ export { default as NoPending } from './friendItemLogos/undraw_toy_car_-7-umw.sv
 export { default as NoBlocking } from './friendItemLogos/undraw_safe_re_kiil.svg'
 export { default as NoOnline } from './friendItemLogos/undraw_night_calls_-5-jh7.svg'
 export { default as NoFriends } from './friendItemLogos/undraw_friends_online_re_r7pq.svg'
+
+export { default as NoChannel } from './undraw_begin_chat_re_v0lw.svg'

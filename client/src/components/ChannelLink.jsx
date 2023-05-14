@@ -1,29 +1,45 @@
-import { Text, Icon, Box, Tooltip, IconButton, Link as ChakraLink, ButtonGroup, useDisclosure } from '@chakra-ui/react'
-import React from 'react'
+import { Text, Icon, Box, Tooltip, IconButton, Link as ChakraLink, ButtonGroup } from '@chakra-ui/react'
+import React, { useState } from 'react'
 import { BiHash } from 'react-icons/bi'
 import { NavLink } from 'react-router-dom'
 import { HiSpeakerWave } from 'react-icons/hi2'
 import { MdPersonAddAlt1 } from 'react-icons/md'
-import { LockIcon, SettingsIcon } from '@chakra-ui/icons'
-import { CreateInvitationForm } from '../features'
+import { SettingsIcon } from '@chakra-ui/icons'
+import { Authority, ChannelOverview, CreateInvitationForm, DeleteChannel } from '../features'
 import styled from '@emotion/styled'
+import { FaLock } from 'react-icons/fa'
+import Settings from '../layouts/Settings'
 
 const ChannelLink = (props) => {
   const { toURL, server, channel, currentUser, privateChannel, isAccordionOpen } = props;
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const channelName = channel?.title;
   const category = channel?.category;
   const notifications = channel?.notifications?.filter((notification) => {
     return notification.recipient === currentUser?._id;
   });
+  const [ isModalOpen, setIsModalOpen ] = useState('');
 
-  const rest = {
-    isOpen: isOpen,
-    onClose: onClose,
+  const createInvitationRest = {
+    isOpen: isModalOpen == 'createInvitation',
+    onClose: () => setIsModalOpen(''),
     channelName: channelName,
     category: category,
     privateChannel: privateChannel && true,
     server: server,
+  };
+
+  const channelSettingsRest = {
+    isOpen: isModalOpen == 'channelSettings',
+    onClose: () => setIsModalOpen(''),
+    type: 'チャンネル設定',
+    tabItems: {
+      [`${channelName}`]: {
+        '概要': <ChannelOverview key='概要' />,
+        '権限': <Authority key='権限' />,
+      },
+    },
+    DeleteChannel: <DeleteChannel channel={channel} />,
+    channel: channel,
   };
   
   return (
@@ -74,7 +90,7 @@ const ChannelLink = (props) => {
               <Box as={'span'} h='24px' position='relative'>
                 <Icon as={BiHash} boxSize={'24px'} mr='6px' />
                 {privateChannel &&
-                  <LockIcon boxSize='6px'
+                  <Icon as={FaLock} boxSize='6px'
                     position='absolute' top='3px' left='15px' 
                     bg='#2b2d31' outline='2px solid #2b2d31'
                   />
@@ -103,7 +119,7 @@ const ChannelLink = (props) => {
                 _hover={{ bg: 'transparent', color: '#dcdde1' }}
                 onClick={(e) => {
                   e.preventDefault();
-                  onOpen();
+                  setIsModalOpen('createInvitation');
                 }}
               />
             </Tooltip>
@@ -117,6 +133,10 @@ const ChannelLink = (props) => {
                   icon={<SettingsIcon size={16} p='1.5px' />} size={16}
                   bg='transparent' color='#b8b9bf' ml='-4px'
                   _hover={{ bg: 'transparent', color: '#dcdde1' }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsModalOpen('channelSettings');
+                  }}
                 />
               </Tooltip>
             }
@@ -134,7 +154,8 @@ const ChannelLink = (props) => {
         }
       </Box>
 
-      <CreateInvitationForm {...rest} />
+      <CreateInvitationForm {...createInvitationRest} />
+      <Settings {...channelSettingsRest} />
     </>
   )
 };

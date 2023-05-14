@@ -3,7 +3,7 @@ import { Mutex } from 'async-mutex';
 import { socket } from '../../socket';
 import { logout, setCredential } from './authSlice';
 
-const BASEURL = import.meta.env.VITE_BASEURL;
+const BASEURL = import.meta.env.VITE_API_URL;
 
 const mutex = new Mutex();
 const baseQuery = fetchBaseQuery({ 

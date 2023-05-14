@@ -165,21 +165,16 @@ const Login = () => {
                 />
 
                 <InputRightElement>
-                  <IconButton 
-                    aria-label='reveal-password-icon'
-                    bg='transparent'
-                    color='#989aa2'
-                    fontSize='18px'
+                  <IconButton aria-label='reveal-password-icon'
                     icon={isRevealPassword ? <MdVisibility /> : <MdVisibilityOff />}
+                    bg='transparent' color='#989aa2' fontSize='18px'
                     _hover={{backgroundColor: 'transparent'}}
                     onClick={() => setIsRevealPassword((prevState) => !prevState)}
                   />
                 </InputRightElement>
               </InputGroup>
 
-              <Button variant='link'
-                color='#00aafc' mt='6px'
-              >
+              <Button variant='link' color='#00aafc' mt='6px'>
                 <Text fontSize='14px' lineHeight='16px' fontWeight='400'>
                   パスワードをお忘れですか？
                 </Text>
@@ -188,8 +183,7 @@ const Login = () => {
             
             <Box w='100%' mt='20px'>
               <Button type='submit'
-                w='100%' mb='8px'
-                bg='#5865f2' borderRadius='4px'
+                w='100%' mb='8px' bg='#5865f2' borderRadius='4px'
                 _hover={{bg: '#4752c4'}}
                 isLoading={isSubmitting}
                 isDisabled={errors.email || errors.password}
@@ -201,11 +195,8 @@ const Login = () => {
 
               <Text color='#989aa2' fontSize='14px' lineHeight='16px'>
                 アカウント登録が必要ですか？
-                <ChakraLink
-                  as={RouterLink}
-                  to='/register'
-                  color='#00aafc'
-                  ml='4px'
+                <ChakraLink as={RouterLink} to='/register'
+                  color='#00aafc' ml='4px'
                 >
                   登録ページ
                 </ChakraLink>

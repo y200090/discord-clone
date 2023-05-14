@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
         console.log('--------------------');
         console.log('新しいサーバーが作成されました:', newServer);
         io.to(socket.id).emit('new_server_created', newServer);
-        io.to(socket.id).emit('new_channel_created', ...newServer?.ownedChannels);
+        io.to(socket.id).emit('new_channel_created', newServer?.ownedChannels);
     });
 
     socket.on('join_server', async ({ server, currentUser }) => {
@@ -66,12 +66,23 @@ io.on('connection', (socket) => {
         const allowedUserIds = server?.ownedChannels[0]?.allowedUsers?.map((user) => {
             return user?._id;
         });
-        console.log(allowedUserIds);
+        allowedUserIds.push(currentUser?._id);
 
+        io.to(currentUser?._id).emit('new_server_created', server);
+        io.to(currentUser?._id).emit('new_channel_created', server?.ownedChannels)
         io.to(allowedUserIds).emit('server_joined', {
             channels: server?.ownedChannels,
             currentUser,
         });
+    });
+
+    socket.on('delete_server', async (server) => {
+        const memberIds = server?.members?.map((member) => {
+            return member?._id;
+        });
+        console.log(memberIds);
+
+        io.to(memberIds).emit('server_deleted', server);
     });
 
     socket.on('create_channel', async (newChannel) => {
@@ -82,7 +93,14 @@ io.on('connection', (socket) => {
             return member._id;
         });
         console.log(memberIds);
-        io.to(memberIds).emit('new_channel_created', newChannel);
+        io.to(memberIds).emit('new_channel_created', [newChannel]);
+    });
+
+    socket.on('delete_channel', async (channel) => {
+        const allowedUserIds = channel?.allowedUsers?.map((user) => {
+            return user?._id;
+        });
+        io.to(allowedUserIds).emit('channel_deleted', channel);
     });
 
     socket.on('send_request', async (newRequest) => {
@@ -97,7 +115,7 @@ io.on('connection', (socket) => {
         console.log('--------------------');
         console.log('フレンド申請が承認されました');
         io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('delete_request', request);
-        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('new_channel_created', newDirectMessage);
+        io.to(`${request?.to?._id}`).to(`${request?.from?._id}`).emit('new_channel_created', [newDirectMessage]);
 
         io.to(`${request?.to?._id}`).emit('request_approved', request?.from);
         io.to(`${request?.from?._id}`).emit('request_approved', request?.to);
@@ -126,7 +144,7 @@ io.on('connection', (socket) => {
                 return user?._id;
             });
             console.log(allowedUserIds);
-            io.to(allowedUserIds).emit('new_channel_created', DM);
+            io.to(allowedUserIds).emit('new_channel_created', [DM]);
             io.to(allowedUserIds).emit('direct_message_added', DM);
         }
     });
@@ -137,7 +155,27 @@ io.on('connection', (socket) => {
         io.to(socket.id).emit('direct_message_removed', directMessageId);
     });
 
-    socket.on('withdraw_from_channel', ({targetChannel, withDrawnUser}) => {
+    // グループDMからの招待を受諾
+    socket.on('recieve_invitation_from_direct_message', ({ targetUsers, currentUser, directMessage }) => {
+        console.log('--------------------');
+        console.log('グループDMに招待しました');
+        // const allowedUserIds = directMessage?.allowedUsers?.map((user) => {
+        //     return user?._id;
+        // });
+        const targetUserIds = targetUsers?.map((user) => {
+            return user?._id;
+        });
+
+        io.to([currentUser?._id, ...targetUserIds]).emit('channel_joined', { 
+            channel: directMessage,
+            targetUsers,
+        });
+        // io.to(targetUserIds).emit('directMessage_added', directMessage);
+        // io.to(targetUserIds).emit('new_channel_created', directMessage);
+    });
+
+    // チャンネルから脱退
+    socket.on('withdraw_from_channel', ({ targetChannel, withDrawnUser }) => {
         console.log('--------------------');
         console.log(targetChannel?._id, 'から脱退しました');
         const allowedUserIds = targetChannel?.allowedUsers?.map((user) => {
@@ -247,8 +285,7 @@ io.on('connection', (socket) => {
     });
 
     // 既読チェック
-    socket.on('read_messages', async ({ currentChannel, currentUser}) => {
-        // const currentUserId = socket?.user?._id;
+    socket.on('read_messages', async ({ currentChannel, currentUser, unreadMessages }) => {
         const channelId = currentChannel?._id;
 
         console.log('--------------------');
@@ -311,6 +348,13 @@ io.on('connection', (socket) => {
         } catch (err) {
             console.log(err);
         }        
+    });
+
+    socket.on('clear_unreadMessages', ({ currentUser, unreadMessages }) => {
+        io.to(currentUser?._id).emit('unreadMessages_cleared', {
+            currentUser, 
+            unreadMessages,
+        });
     });
 
     socket.on('disconnect', async (reason) => {

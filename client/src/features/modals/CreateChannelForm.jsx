@@ -6,18 +6,17 @@ import { IoMdLock } from 'react-icons/io'
 import { HiSpeakerWave } from 'react-icons/hi2'
 import { useCreateChannelMutation } from '../../redux/apis/channelApi'
 import { useNavigate } from 'react-router-dom'
-import { FaDiscord } from 'react-icons/fa'
-import { LockIcon } from '@chakra-ui/icons'
+import { FaDiscord, FaLock } from 'react-icons/fa'
 
 const CreateChannelForm = (props) => {
-  const { isOpen, onClose, arisingFrom, server, currentUser } = props;
+  const { isOpen, onClose, arisingFrom, server, currentUserId } = props;
   const navigate = useNavigate();
   const [ CreateChannel ] = useCreateChannelMutation();
   const [ channelName, setChannelName ] = useState('');
   const [ category, setCategory ] = useState('テキストチャンネル');
   const [ privateChannel, setPrivateChannel ] = useState(false);
   const [ progress, setProgress ] = useState(0);
-  const [ allowedUserIds, setAllowedUserIds] = useState([currentUser?._id]);
+  const [ allowedUserIds, setAllowedUserIds] = useState([currentUserId]);
 
   useEffect(() => {
     return () => {
@@ -25,7 +24,7 @@ const CreateChannelForm = (props) => {
       setCategory('テキストチャンネル');
       setPrivateChannel(false);
       setProgress(0);
-      setAllowedUserIds([currentUser?._id]);
+      setAllowedUserIds([currentUserId]);
     };
   }, [isOpen]);
 
@@ -39,7 +38,7 @@ const CreateChannelForm = (props) => {
       setAllowedUserIds([...allowedUserIds, e.target.id]);
     }
   };
-  
+
   const handleCreateChannel = async (e) => {
     e.preventDefault();
 
@@ -50,7 +49,7 @@ const CreateChannelForm = (props) => {
           return member._id
         });
       }
-      
+
       const newChannel = await CreateChannel({ 
         channelName, 
         serverId: server._id, 
@@ -71,7 +70,7 @@ const CreateChannelForm = (props) => {
       setCategory('テキストチャンネル');
       setPrivateChannel(false);
       setProgress(0);
-      setAllowedUserIds([currentUser?._id]);
+      setAllowedUserIds([currentUserId]);
     }
   };  
 
@@ -139,7 +138,7 @@ const CreateChannelForm = (props) => {
                           'div > div': {
                             svg: {
                               color: category !== CheckFieldItem.value && '#9a9da1',
-                              outlineColor: '#393c41'
+                              outlineColor: category !== CheckFieldItem.value && '#393c41'
                             }
                           }
                         }
@@ -173,9 +172,13 @@ const CreateChannelForm = (props) => {
                         <Box position='relative'>
                           <Icon as={CheckFieldItem.icon} boxSize='22px' mr='12px' color='#acadb1' />
                           {privateChannel && (
-                            <LockIcon boxSize='8px' 
+                            <Icon as={FaLock} boxSize='8px' 
                               position='absolute' top='10%' left='14px' 
                               color='#acadb1' 
+                              bg={category === CheckFieldItem.value 
+                                ? '2px solid #43444b' 
+                                : '2px solid #2b2d31'
+                              }
                               outline={category === CheckFieldItem.value 
                                 ? '2px solid #43444b' 
                                 : '2px solid #2b2d31'
@@ -214,8 +217,8 @@ const CreateChannelForm = (props) => {
                         as={category === 'テキストチャンネル' ? BiHash : HiSpeakerWave} 
                       />
                       {privateChannel && (
-                        <LockIcon boxSize='6px' 
-                          position='absolute' top='12px' left='18px' 
+                        <Icon as={FaLock} boxSize='6px' 
+                          position='absolute' top='12px' left='17px' 
                           color='#dbdee1' 
                           outline='1px solid #1e1f22' 
                         />
@@ -361,7 +364,7 @@ const CreateChannelForm = (props) => {
                   メンバー
                 </Text>
                 {server?.members?.map((member) => {
-                  if (member?._id == currentUser?._id) return;
+                  if (member?._id == currentUserId) return;
                   return (
                     <Flex key={member?._id}
                       align='center' cursor='pointer' m='0 12px'
