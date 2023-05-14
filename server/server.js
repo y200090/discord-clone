@@ -9,7 +9,7 @@ const Channel = require('./models/Channel');
 
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_APP_URL,
+        origin: `${process.env.CLIENT_APP_URL}`,
     },
 });
 
