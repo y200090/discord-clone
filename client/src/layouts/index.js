@@ -1,7 +1,0 @@
-export { default as Chat } from './Chat'
-export { default as Friends } from './Friends'
-export { default as Main } from './Main'
-export { default as MotionForm } from './MotionForm'
-export { default as NavBar } from './NavBar'
-export { default as Server } from './Server'
-export { default as Settings } from './Settings'
