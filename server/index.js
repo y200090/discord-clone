@@ -25,7 +25,7 @@ app.use(express.urlencoded({
 app.use(cookieParser());
 app.use(cors({
     credentials: true, 
-    origin: 'http://localhost:5173',
+    origin: process.env.CLIENT_APP_URL,
 }));
 app.use('/auth', authRoute);
 app.use('/user', userRoute);

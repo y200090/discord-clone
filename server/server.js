@@ -9,7 +9,7 @@ const Channel = require('./models/Channel');
 
 const io = new Server(server, {
     cors: {
-        origin: 'http://localhost:5173',
+        origin: process.env.CLIENT_APP_URL,
     },
 });
 
