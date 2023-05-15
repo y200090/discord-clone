@@ -2,7 +2,7 @@
     "version": 2,
     "routes": [
         {
-            "source": "/(.*)",
+            "src": "/(.*)",
             "headers": {
                 "Set-Cookie": "*",
                 "Access-Control-Allow-Credentials": "true",
