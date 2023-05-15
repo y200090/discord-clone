@@ -7,8 +7,14 @@
                 "Set-Cookie": "*",
                 "Access-Control-Allow-Credentials": "true",
                 "Access-Control-Allow-Origin": "https://pprno-eldoccia.vercel.app"
-            }
+            },
+            "continue": true
         }
     ],
-    
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
 }
