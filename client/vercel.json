@@ -3,11 +3,12 @@
     "headers": [
         {
             "source": "/(.*)",
-            "headers": {
-                "Set-Cookie": "*",
-                "Access-Control-Allow-Credentials": "true",
-                "Access-Control-Allow-Origin": "https://pprno-eldoccia.vercel.app"
-            }
+            "headers": [
+                {
+                    "key": Set-Cookie",
+                    "value: "*",
+                }
+            ]
         }
     ],
     "rewrites": [
