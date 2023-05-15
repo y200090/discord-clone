@@ -66,14 +66,17 @@ router.post('/register', async (req, res) => {
         res.cookie('access_token', accessToken, {
             httpOnly: true,
             maxAge: 60 * 60 * 1000 * 0.5,
+            domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
         });
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true, 
             maxAge: 60 * 60 * 1000,
+            domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
         });
         res.cookie('logged_in', true, {
             httpOnly: false,
             maxAge: 60 * 60 * 1000 * 0.5,
+            domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
             // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
             // expires: new Date(Date.now() + 60000), // 1分
         });
@@ -118,14 +121,17 @@ router.post('/login', async (req, res) => {
             res.cookie('access_token', accessToken, {
                 httpOnly: true, 
                 maxAge: 60 * 60 * 1000 * 0.5,
+                domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
             });
             res.cookie('refresh_token', refreshToken, {
                 httpOnly: true, 
                 maxAge: 60 * 60 * 1000,
+                domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
             });
             res.cookie('logged_in', true, {
                 httpOnly: false,
                 maxAge: 60 * 60 * 1000 * 0.5,
+                domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
                 // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
                 // expires: new Date(Date.now() + 60000), // 1分
             });
@@ -195,14 +201,17 @@ router.post('/refresh/token', async (req, res) => {
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true, 
                     maxAge: 60 * 60 * 1000 * 0.5,
+                    domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
                 });
                 res.cookie('refresh_token', newRefreshToken, {
                     httpOnly: true, 
                     maxAge: 60 * 60 * 1000,
+                    domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
                 });
                 res.cookie('logged_in', true, {
                     httpOnly: false,
                     maxAge: 60 * 60 * 1000 * 0.5,
+                    domain: process.env.CLIENT_APP_URL.replace(/^https?:\/\//i, ""),
                     // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
                     // expires: new Date(Date.now() + 60000), // 1分
                 });
