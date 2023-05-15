@@ -32,7 +32,6 @@ const Chat = () => {
     friend = currentChannel[0]?.allowedUsers?.filter((user) => {
       return user?._id != currentUser?._id;
     });
-    console.log(friend)
   }
   console.log('チャンネル情報：', currentChannel[0]);
 
