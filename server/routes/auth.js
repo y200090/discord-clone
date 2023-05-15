@@ -64,14 +64,17 @@ router.post('/register', async (req, res) => {
         });
 
         res.cookie('access_token', accessToken, {
-            httpOnly: true, 
+            httpOnly: true,
+            maxAge: 60 * 60 * 1000 * 0.5,
         });
         res.cookie('refresh_token', refreshToken, {
             httpOnly: true, 
+            maxAge: 60 * 60 * 1000,
         });
         res.cookie('logged_in', true, {
             httpOnly: false,
-            expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+            maxAge: 60 * 60 * 1000 * 0.5,
+            // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
             // expires: new Date(Date.now() + 60000), // 1分
         });
 
@@ -114,13 +117,16 @@ router.post('/login', async (req, res) => {
             
             res.cookie('access_token', accessToken, {
                 httpOnly: true, 
+                maxAge: 60 * 60 * 1000 * 0.5,
             });
             res.cookie('refresh_token', refreshToken, {
                 httpOnly: true, 
+                maxAge: 60 * 60 * 1000,
             });
             res.cookie('logged_in', true, {
                 httpOnly: false,
-                expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+                maxAge: 60 * 60 * 1000 * 0.5,
+                // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
                 // expires: new Date(Date.now() + 60000), // 1分
             });
 
@@ -188,13 +194,16 @@ router.post('/refresh/token', async (req, res) => {
 
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true, 
+                    maxAge: 60 * 60 * 1000 * 0.5,
                 });
                 res.cookie('refresh_token', newRefreshToken, {
                     httpOnly: true, 
+                    maxAge: 60 * 60 * 1000,
                 });
                 res.cookie('logged_in', true, {
                     httpOnly: false,
-                    expires: new Date(Date.now() + 3600000 * 0.5), // 30分
+                    maxAge: 60 * 60 * 1000 * 0.5,
+                    // expires: new Date(Date.now() + 3600000 * 0.5), // 30分
                     // expires: new Date(Date.now() + 60000), // 1分
                 });
 
