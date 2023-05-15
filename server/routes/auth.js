@@ -64,7 +64,7 @@ router.post('/register', async (req, res) => {
         });
         
         const secure = req.secure ? true : false;
-        const sameSite = secure ? 'None' : 'Lax';
+        const sameSite = secure ? 'None' : 'None';
 
         res.cookie('access_token', accessToken, {
             httpOnly: true,
@@ -128,7 +128,7 @@ router.post('/login', async (req, res) => {
             }
             
             const secure = req.secure ? true : false;
-            const sameSite = secure ? 'None' : 'Lax';
+            const sameSite = secure ? 'None' : 'None';
             
             res.cookie('access_token', accessToken, {
                 httpOnly: true, 
@@ -217,7 +217,7 @@ router.post('/refresh/token', async (req, res) => {
                 await token.save();
                 
                 const secure = req.secure ? true : false;
-                const sameSite = secure ? 'None' : 'Lax';
+                const sameSite = secure ? 'None' : 'None';
 
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true, 
