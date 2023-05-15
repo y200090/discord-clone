@@ -6,7 +6,7 @@
             "headers": [
                 {
                     "key": Set-Cookie",
-                    "value: "*",
+                    "value: "cookie-name=cookie-value; Path=/; HttpOnly; Secure; SameSite=None"
                 }
             ]
         }
