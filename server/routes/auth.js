@@ -63,8 +63,8 @@ router.post('/register', async (req, res) => {
             refreshToken, 
         });
         
-        const secure = req.secure ? true : false;
-        const sameSite = secure ? 'None' : 'None';
+        const secure = true;
+        const sameSite = 'None';
 
         res.cookie('access_token', accessToken, {
             httpOnly: true,
@@ -127,8 +127,8 @@ router.post('/login', async (req, res) => {
                 await token.save();
             }
             
-            const secure = req.secure ? true : false;
-            const sameSite = secure ? 'None' : 'None';
+            const secure = true;
+            const sameSite = 'None';
             
             res.cookie('access_token', accessToken, {
                 httpOnly: true, 
@@ -216,8 +216,8 @@ router.post('/refresh/token', async (req, res) => {
                 token.refreshToken = newRefreshToken;
                 await token.save();
                 
-                const secure = req.secure ? true : false;
-                const sameSite = secure ? 'None' : 'None';
+                const secure = true;
+                const sameSite = 'None';
 
                 res.cookie('access_token', newAccessToken, {
                     httpOnly: true, 
